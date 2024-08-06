@@ -1,3 +1,18 @@
 {
-    "type": "module"
+    "type": "module",
+    "name": "rule34-advanced-search",
+    "version": "1.0.0",
+    "description": "A website where you can access the porn on rule34 with more advanced search options.",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "rule34",
+        "porn",
+        "advanced",
+        "search"
+    ],
+    "author": "Levi Buckwalter",
+    "license": "UNLICENSED"
 }
