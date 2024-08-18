@@ -1,6 +1,3 @@
-
-
-
 export function smartGetElement<T extends HTMLElement>(id: string, constructor: new () => T): T {
     const idReturn = document.getElementById(id)
     if (idReturn && idReturn instanceof constructor) {
