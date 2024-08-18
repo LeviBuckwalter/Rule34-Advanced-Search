@@ -1,0 +1,22 @@
+<html>
+<h1>Wtf do you mean "tuple size"?</h1>
+<p>
+    The tuple size is the number of tags that will be searched at once.
+</p>
+<p>
+    The post rater function searches through other posts with similar tags and sees how many of them have the tag you're
+    rating by. If you're post has tags A, B, C, and D, and if your selected tuple size is 1, then the post rater
+    function will search "tag A", and then "tag B", and then "tag C", and then "tag D". If you're selected tuple size is
+    2, the post rater function will search "tag A and tag B", and then "tag A and tag C", and then "tag A and tag D",
+    and then "tag B and tag C", and then "tag B and tag D", and then "tag D and tag D". So the tuple size is the number
+    of your post's tags that will be in each search.
+</p>
+<h4>But why though?</h4>
+<p>
+    The theory goes that each unique combination of tags is its own thing. So posts with tag A and tag B might have
+    characteristics not found in either tag A or tag B on their own. And so it's not just that your post has tags A, B,
+    and C, its that it has tags A, B, C, D, A+B, A+C, A+D, B+C, B+D, C+D, A+B+C, A+B+D, A+C+D, B+C+D, and A+B+C+D. And,
+    the theory goes, each of those combinations might be their own thing.
+</p>
+
+</html>

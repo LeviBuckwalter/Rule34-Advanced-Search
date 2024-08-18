@@ -14,5 +14,12 @@
         "search"
     ],
     "author": "Levi Buckwalter",
-    "license": "UNLICENSED"
+    "license": "UNLICENSED",
+    "dependencies": {
+        "r34-tools": "file:../R34 tools"
+    },
+    "devDependencies": {
+      "typescript": "^5.5.4"
+    }
+
 }

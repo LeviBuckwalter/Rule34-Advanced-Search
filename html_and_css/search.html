@@ -1,0 +1,44 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Search Page</title>
+</head>
+
+<body>
+    <h1>Search</h1>
+    <div>
+        <a href="./index.html">Home Page</a>
+    </div>
+
+    <section>
+        <div>
+            <label for="constraints">Constraints</label>
+            <input type="text" id="constraints">
+        </div>
+        <div>
+            <label for="sortInput">Sort</label>
+            <select id="sortInput">
+                <option>sort:id:desc</option>
+                <option>sort:id:asc</option>
+                <option>sort:score:desc</option>
+                <option>sort:score:asc</option>
+            </select>
+        </div>
+    </section>
+    <div>
+        <button id="searchButton">Search</button>
+    </div>
+    <section id="imageSection">
+    </section>
+
+    <!-- <div>
+        <a id="r34PicLink" target="_blank"> <img id="r34Pic"></a>
+    </div> -->
+
+</body>
+
+
+<script type="module" async="true" src="../src/searchPage.js"></script>
+
+</html>
