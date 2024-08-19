@@ -48,6 +48,8 @@ function compare() {
             if (comparisonTag) {
                 tags += `+${comparisonTag}`;
             }
+            tags = tags.replace(/ /g, "+");
+            console.log(tags);
             return `<a href=https://rule34.xxx/index.php?page=post&s=list&tags=${tags} target="_blank">${obj.tag}</a>: ${Math.round(obj.tagAPerc * 1000) / 10}%, ${Math.round(obj.tagBPerc * 1000) / 10}%, ${Math.round(obj.allPerc * 1000) / 10}%<br>`;
         }
         tagsWithPercs.sort(function (a, b) {
@@ -83,7 +85,7 @@ function compare() {
         similarDiv.innerHTML = `<br><br>Tags that are common in "${tagB}" and "${tagA}":<br>`;
         for (let i = 0; i < 50; i++) {
             const obj = tagsWithPercs[i];
-            similarDiv.innerHTML += displayLine(obj, `(+${tagA}+~+${tagB}+)`);
+            similarDiv.innerHTML += displayLine(obj, `( ${tagA} ~ ${tagB} )`);
         }
         smartGetElement("answerDiv", HTMLElement).appendChild(similarDiv);
     });
