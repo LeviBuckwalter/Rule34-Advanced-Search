@@ -42,8 +42,12 @@ async function compare() {
 
 
 
-    function displayLine(obj: { tag: string, tagAPerc: number, tagBPerc: number, allPerc: number }) {
-        return `<a href=https://rule34.xxx/index.php?page=post&s=list&tags=${obj.tag} target="_blank">${obj.tag}</a>: ${Math.round(obj.tagAPerc * 1000) / 10}%, ${Math.round(obj.tagBPerc * 1000) / 10}%, ${Math.round(obj.allPerc * 1000) / 10}%<br>`
+    function displayLine(obj: { tag: string, tagAPerc: number, tagBPerc: number, allPerc: number }, comparisonTag?: string) {
+        let tags = obj.tag
+        if (comparisonTag) {
+            tags += `+${comparisonTag}`
+        }
+        return `<a href=https://rule34.xxx/index.php?page=post&s=list&tags=${tags} target="_blank">${obj.tag}</a>: ${Math.round(obj.tagAPerc * 1000) / 10}%, ${Math.round(obj.tagBPerc * 1000) / 10}%, ${Math.round(obj.allPerc * 1000) / 10}%<br>`
     }
 
     tagsWithPercs.sort(function (a, b) {
@@ -57,7 +61,7 @@ async function compare() {
     tagADiv.innerHTML = `<br><br>Tags that are common in "${tagA}" as opposed to "${tagB}":<br>`
     for (let i = 0; i < 50; i++) {
         const obj = tagsWithPercs[i]
-        tagADiv.innerHTML += displayLine(obj)
+        tagADiv.innerHTML += displayLine(obj, tagA)
     }
     smartGetElement("answerDiv", HTMLElement).appendChild(tagADiv)
 
@@ -73,7 +77,7 @@ async function compare() {
     tagBDiv.innerHTML = `<br><br>Tags that are common in "${tagB}" as opposed to "${tagA}":<br>`
     for (let i = 0; i < 50; i++) {
         const obj = tagsWithPercs[i]
-        tagBDiv.innerHTML += displayLine(obj)
+        tagBDiv.innerHTML += displayLine(obj, tagB)
     }
     smartGetElement("answerDiv", HTMLElement).appendChild(tagBDiv)
 
@@ -85,7 +89,7 @@ async function compare() {
     similarDiv.innerHTML = `<br><br>Tags that are common in "${tagB}" and "${tagA}":<br>`
     for (let i = 0; i < 50; i++) {
         const obj = tagsWithPercs[i]
-        similarDiv.innerHTML += displayLine(obj)
+        similarDiv.innerHTML += displayLine(obj, `(+${tagA}+~+${tagB}+)`)
     }
     smartGetElement("answerDiv", HTMLElement).appendChild(similarDiv)
 }
