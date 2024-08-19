@@ -1,0 +1,11 @@
+{
+  "name": "cache-tools",
+  "version": "1.0.0",
+  "description": "A mini library with cache classes and functions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Levi Buckwalter",
+  "license": "ISC"
+}
