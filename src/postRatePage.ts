@@ -1,7 +1,7 @@
 import { smartGetElement } from "./functions.js";
-import { ratePost } from "../node_modules/r34-tools/src/testing/rate_post.js"
-import { getPosts } from "../node_modules/r34-tools/src/functions/general_functions/end_user.js"
-import { resetAnchor } from "../node_modules/r34-tools/src/caches/post_caching/post_caching_functions.js";
+import { ratePost } from "r34-tools/src/testing/rate_post.js"
+import { getPosts } from "r34-tools/src/functions/general_functions/end_user.js"
+import { resetAnchor } from "r34-tools/src/caches/post_caching/post_caching_functions.js";
 
 window.onload = resetAnchor
 

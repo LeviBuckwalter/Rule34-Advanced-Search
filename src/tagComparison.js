@@ -7,10 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getPosts } from "../node_modules/r34-tools/src/functions/general_functions/end_user.js";
-import { Census } from "../node_modules/r34-tools/src/classes/Census.js";
+import { getPosts } from "r34-tools/src/functions/general_functions/end_user.js";
+import { Census } from "r34-tools/src/classes/Census.js";
 import { smartGetElement } from "./functions.js";
-import { resetAnchor } from "../node_modules/r34-tools/src/caches/post_caching/post_caching_functions.js";
+import { resetAnchor } from "r34-tools/src/caches/post_caching/post_caching_functions.js";
 window.onload = resetAnchor;
 function compare() {
     return __awaiter(this, void 0, void 0, function* () {
