@@ -1,7 +1,7 @@
-import { getPosts } from "r34-tools/src/functions/general_functions/end_user.js"
-import { Census } from "r34-tools/src/classes/Census.js"
+import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js"
+import { Census } from "../R34-Tools/src/classes/Census.js"
 import { smartGetElement } from "./functions.js"
-import { resetAnchor } from "r34-tools/src/caches/post_caching/post_caching_functions.js"
+import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js"
 
 window.onload = resetAnchor
 

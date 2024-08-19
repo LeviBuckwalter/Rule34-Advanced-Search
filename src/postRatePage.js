@@ -8,9 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { smartGetElement } from "./functions.js";
-import { ratePost } from "r34-tools/src/testing/rate_post.js";
-import { getPosts } from "r34-tools/src/functions/general_functions/end_user.js";
-import { resetAnchor } from "r34-tools/src/caches/post_caching/post_caching_functions.js";
+import { ratePost } from "../R34-Tools/src/testing/rate_post.js";
+import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
+import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 window.onload = resetAnchor;
 function rate() {
     return __awaiter(this, void 0, void 0, function* () {
