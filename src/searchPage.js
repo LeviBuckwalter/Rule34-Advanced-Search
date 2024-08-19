@@ -7,15 +7,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { smartGetElement } from "./functions.js";
+import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
+import { tsToId } from "../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
 window.onload = resetAnchor;
 function search() {
     return __awaiter(this, void 0, void 0, function* () {
-        const constraints = smartGetElement("constraints", HTMLInputElement).value;
+        const constraints = smartGetElement("constraints", HTMLInputElement).value + " ";
         const sort = smartGetElement("sortInput", HTMLSelectElement).value;
-        const prompt = constraints + " " + sort;
+        let idConstraints = "";
+        const timeInputEarliest = smartGetElement("timeInputEarliest", HTMLInputElement).value;
+        if (timeInputEarliest !== "") {
+            const minId = tsToId(Date.parse(smartGetElement("timeInputEarliest", HTMLInputElement).value) / 1000);
+            idConstraints += `id:>${minId} `;
+        }
+        const timeInputLatest = smartGetElement("timeInputLatest", HTMLInputElement).value;
+        if (timeInputLatest !== "") {
+            const maxId = tsToId(Date.parse(smartGetElement("timeInputLatest", HTMLInputElement).value) / 1000);
+            idConstraints += `id:<${maxId} `;
+        }
+        const prompt = constraints + idConstraints + sort;
         const posts = (yield getPosts(prompt, 100, {}));
         smartGetElement("imageSection", HTMLElement).innerHTML = "";
         for (const post of posts) {
@@ -27,8 +39,6 @@ function search() {
             imageElement.src = post.thumbnailUrl;
             linkElement.appendChild(imageElement);
         }
-        // smartGetElement("r34Pic", HTMLImageElement).src = post.thumbnailUrl
-        // smartGetElement("r34PicLink", HTMLAnchorElement).href = post.siteUrl
     });
 }
 smartGetElement("searchButton", HTMLButtonElement).addEventListener("click", search);
