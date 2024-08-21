@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Vote Search</title>
+</head>
+
+<body>
+    <h1>Vote Search</h1>
+    <div>
+        <a href="../index.html">Home Page</a>
+    </div>
+
+    <section>
+        Options:
+        <div>
+            <label for="scopeInput">Narrow the scope</label>
+            <input type="text" id="scopeInput">
+        </div>
+    </section>
+    <section>
+        Vote:
+        <div>
+            <button id="bigYesButton">YES!</button>
+            <button id="littleYesButton">yes</button>
+            <button id="evenStevenButton">even-steven</button>
+            <button id="littleNoButton">no</button>
+            <button id="bigNoButton">NO!</button>
+            <div>
+                <button id="passButton">pass</button>
+            </div>
+        </div>
+
+    </section>
+
+    <div>
+        <a id="imageLinkElement" target="_blank">
+            <img id="imageElement" style="width: 400px; height: auto;">
+        </a>
+    </div>
+
+    <div>
+        <br>
+        <br>
+        Summary:
+        <div id="summaryDiv"></div>
+    </div>
+    <div id="summaryDiv"></div>
+</body>
+
+<script type="module" async="true" src="../src/voteSearch.js"></script>
+
+</html>
