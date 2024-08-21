@@ -108,10 +108,25 @@ async function findNewPost(): Promise<Post> {
     for (const { tuple } of tuplesWithAvgScore) {
         prompt = `${scope} ${untuple(tuple).join(" ")}`
         const count = await getCount(prompt, {})
-        if (count > 100) {
+        if (count === 0) {
+            //the prompt is bad
+            continue
+        } else if (count > 200) {
+            //assume the prompt is good
             break
+        } else {
+            const posts = await getPosts(prompt, 1000, {})
+            let approve = false
+            for (const post of posts) {
+                if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
+                    //the prompt is good
+                    approve = true
+                    break
+                }
+            }
+            if (approve) { break }
         }
-        console.log(`The prompt "${prompt}" only has ${count} results, so the next prompt will be checked.`)
+        console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`)
     }
 
 
@@ -180,6 +195,18 @@ function resetDisplay(): void {
         anchorEle.appendChild(imageEle)
         const spanEle = document.createElement("span")
         spanEle.textContent = `Score: ${score}`
+        const plusButton = document.createElement("button")
+        plusButton.innerText = "+1"
+        plusButton.addEventListener("click", function () {
+            scores.set(post.id, score + 1)
+            resetDisplay()
+        })
+        const minusButton = document.createElement("button")
+        minusButton.innerText = "-1"
+        minusButton.addEventListener("click", function () {
+            scores.set(post.id, score - 1)
+            resetDisplay()
+        })
         const xButtonEle = document.createElement("button")
         xButtonEle.textContent = "Remove"
         xButtonEle.addEventListener("click", function () {
@@ -189,6 +216,8 @@ function resetDisplay(): void {
         const postDiv = document.createElement("div")
         postDiv.appendChild(anchorEle)
         postDiv.appendChild(spanEle)
+        postDiv.appendChild(minusButton)
+        postDiv.appendChild(plusButton)
         postDiv.appendChild(xButtonEle)
 
         sumDiv.appendChild(postDiv)
