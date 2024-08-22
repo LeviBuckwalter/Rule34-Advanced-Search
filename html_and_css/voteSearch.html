@@ -12,36 +12,44 @@
     </div>
 
     <section>
+        Explainer:
+        <div>
+            [collapsable explanation]
+        </div>
+    </section>
+
+    <section>
         Options:
         <div>
-            <label for="scopeInput">Narrow the scope</label>
+            <label for="addPostIdInput">Add a post by id</label>
+            <input type="text" id="addPostIdInput">
+            <button id="addPostButton">Go</button>
+        </div>
+        <div>
+            <label for="scopeInput">Narrow the search</label>
             <input type="text" id="scopeInput">
         </div>
     </section>
+
     <section>
         Vote:
         <div>
-            <button id="bigYesButton">YES!</button>
-            <button id="littleYesButton">yes</button>
-            <button id="evenStevenButton">even-steven</button>
-            <button id="littleNoButton">no</button>
-            <button id="bigNoButton">NO!</button>
-            <div>
-                <button id="passButton">pass</button>
-            </div>
+            <button id="voteYesButton">Vote yes</button>
+            <button id="voteNoButton">Vote no</button>
         </div>
+    </section>
 
+    <section>
+        Selected post:
+        <div id="currentImageDiv"></div>
+    </section>
+
+    <section>
+        Search:
+        <div id="searchPostDisplay"></div>
     </section>
 
     <div>
-        <a id="imageLinkElement" target="_blank">
-            <img id="imageElement" style="width: 400px; height: auto;">
-        </a>
-    </div>
-
-    <div>
-        <br>
-        <br>
         Summary:
         <div id="summaryDiv"></div>
     </div>

@@ -14,12 +14,13 @@ import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_f
 window.onload = resetAnchor;
 function compare() {
     return __awaiter(this, void 0, void 0, function* () {
+        const amtPosts = 10000;
         smartGetElement("answerDiv", HTMLElement).innerHTML = "";
         const tagA = smartGetElement("tagA", HTMLInputElement).value;
         const tagB = smartGetElement("tagB", HTMLInputElement).value;
-        const postsA = getPosts(tagA, 10000, { storeInCache: false });
-        const postsB = getPosts(tagB, 10000, { storeInCache: false });
-        const postsAll = getPosts("", 10000, {});
+        const postsA = getPosts(tagA, amtPosts, { storeInCache: false });
+        const postsB = getPosts(tagB, amtPosts, { storeInCache: false });
+        const postsAll = getPosts("", amtPosts, {});
         const censusA = new Census(yield postsA);
         const censusB = new Census(yield postsB);
         const censusAll = new Census(yield postsAll);

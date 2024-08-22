@@ -4,13 +4,14 @@ import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { Post } from "../R34-Tools/src/classes/Post";
 
-const passedPosts: Set<number> = new Set() //a set containing the ids of posts which the user has "passed" on
 const votedPosts: Map<number, Post> = new Map() //a map of postIds to posts for all the posts that have been voted on
-const scores: Map<number, number> = new Map() //a map of postIds to scores
-let currentPost: Post //the post currently being displayed and voted on
+const votes: Map<number, number> = new Map() //a map of postIds to scores
+let selectedPost: Post | undefined //the post currently being displayed and voted on
+let searchedPosts: Post[] | undefined //the posts that are being displayed in the search area
 
-type protoTuple = string[] //to convert to tuple, alphabetize and JSON.stringify
-type tuple = string //an array of tags, alphabetized and then JSON.stringified
+
+type protoTuple = string[] //to convert to tuple, alphabetize and join with " "
+type tuple = string //an array of tags, alphabetized and then joined with " "
 
 function tuple(pt: protoTuple): tuple {
     return (pt.sort()).join("+")
@@ -46,171 +47,445 @@ function tupleSet(tags: Set<string>): Set<tuple> {
 
     return tuples
 }
+function tagsInCommon(tagSetA: Set<string>, tagSetB: Set<string>): number {
+    let sum = 0
+    if (tagSetA.size < tagSetB.size) {
+        for (const tag of tagSetA.values()) {
+            if (tagSetB.has(tag)) {
+                sum++
+            }
+        }
+    } else {
+        for (const tag of tagSetB.values()) {
+            if (tagSetA.has(tag)) {
+                sum++
+            }
+        }
+    }
+    return sum
+}
 
 
 async function vote(score: number): Promise<void> {
-    scores.set(currentPost!.id, score)
-    votedPosts.set(currentPost!.id, currentPost!)
-    currentPost = await findNewPost()
-    resetDisplay()
+    if (selectedPost) {
+        votes.set(selectedPost.id, score)
+        votedPosts.set(selectedPost.id, selectedPost)
+        selectedPost = undefined
+        await search()
+        resetDisplay()
+    }
 }
 
-async function findNewPost(): Promise<Post> {
-    //make a set of tuples for each post in votedPosts
-    //make a set of all tuples present in all votedPosts
-    //for each tuple, assign a score by looking at the posts it's present in and the score of said posts
-    //factor in statistics somehow, blah blah
-    //perform a search including the #1 best tuple
-    //-> lots of results? exclude the worst tuple and check again (unfortunately I can't exclude an -or- statement, so maybe just exclude the worst singleton)
-    //-> a small enough number of results? Go through each one and score it off of the scores figured out in step 3
-    //the highest scoring post becomes the new currentPost
+// async function findNewPost(): Promise<Post> {
+//     //make a set of tuples for each post in votedPosts
+//     //make a set of all tuples present in all votedPosts
+//     //for each tuple, assign a score by looking at the posts it's present in and the score of said posts
+//     //factor in statistics somehow, blah blah
+//     //perform a search including the #1 best tuple
+//     //-> lots of results? exclude the worst tuple and check again (unfortunately I can't exclude an -or- statement, so maybe just exclude the worst singleton)
+//     //-> a small enough number of results? Go through each one and score it off of the scores figured out in step 3
+//     //the highest scoring post becomes the new currentPost
 
-    //alphabetize an array of strings by just running sort on it with no function passed in
+//     //alphabetize an array of strings by just running sort on it with no function passed in
 
-    //make a set of tuples for each post in votedPosts
-    const tupleSetsWithScore: { tupleSet: Set<tuple>, score: number }[] = [] //an entry for each post, showing what tuples are in the post and what the post's score is
+//     //make a set of tuples for each post in votedPosts
+//     const tupleSetsWithScore: { tupleSet: Set<tuple>, score: number }[] = [] //an entry for each post, showing what tuples are in the post and what the post's score is
+//     for (const post of votedPosts.values()) {
+//         tupleSetsWithScore.push({
+//             tupleSet: tupleSet(post.tags),
+//             score: scores.get(post.id)!
+//         })
+//     }
+
+//     //make a set of all tuples present in all votedPosts
+//     const allTuples: Set<tuple> = new Set()
+//     for (const { tupleSet } of tupleSetsWithScore) {
+//         for (const tuple of tupleSet.values()) {
+//             allTuples.add(tuple)
+//         }
+//     }
+
+//     //assign an avgScore for each tuple by looking at the scores of the posts it's found in
+//     const tuplesWithAvgScore: { tuple: tuple, avgScore: number }[] = []
+//     for (const tuple of allTuples.values()) {
+//         let scoreTotal = 0
+//         let scoreInstances = 0
+//         for (const { tupleSet, score } of tupleSetsWithScore) {
+//             if (tupleSet.has(tuple)) {
+//                 scoreTotal += score
+//                 scoreInstances++
+//             }
+//         }
+//         const avgScore = scoreTotal / scoreInstances
+//         tuplesWithAvgScore.push({ tuple, avgScore })
+//     }
+
+//     tuplesWithAvgScore.sort(function (a, b) {
+//         return b.avgScore - a.avgScore
+//     })
+
+//     let prompt = ""
+//     const scope = smartGetElement("scopeInput", HTMLInputElement).value
+//     for (const { tuple } of tuplesWithAvgScore) {
+//         prompt = `${scope} ${untuple(tuple).join(" ")}`
+//         const count = await getCount(prompt, {})
+//         if (count === 0) {
+//             //the prompt is bad
+//             continue
+//         } else if (count > 200) {
+//             //assume the prompt is good
+//             break
+//         } else {
+//             const posts = await getPosts(prompt, 1000, {})
+//             let approve = false
+//             for (const post of posts) {
+//                 if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
+//                     //the prompt is good
+//                     approve = true
+//                     break
+//                 }
+//             }
+//             if (approve) { break }
+//         }
+//         console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`)
+//     }
+
+
+
+
+//     // let amtTuplesInPrompt = 1
+//     // let prompt = ""
+//     // const scope = smartGetElement("scopeInput", HTMLInputElement).value
+//     // let loops = 0
+//     // let looping = true
+//     // while (looping) {
+//     //     const tuples = tuplesWithAvgScore.slice(0, amtTuplesInPrompt)
+
+//     //     //construct prompt from tuples array
+//     //     prompt = `${scope} ( `
+//     //     for (const { tuple } of tuples) {
+//     //         prompt += untuple(tuple).join(" ") + " ~ "
+//     //     }
+//     //     prompt = prompt.slice(0, -2)
+//     //     prompt += ")"
+
+
+//     //     console.log(`Checking the prompt "${prompt}"...`)
+//     //     //check the count of prompt
+//     //     if (await getCount(prompt, {}) > 100) {
+//     //         looping = false
+//     //     } else {
+//     //         amtTuplesInPrompt++
+//     //     }
+
+//     //     //safety feature
+//     //     loops++
+//     //     if (loops > 30) {
+//     //         throw new Error(`while loop in findNewPost got past 30 loops, shouldn't happen`)
+//     //     }
+//     // }
+
+
+//     const posts = await getPosts(prompt, 1000, {})
+//     for (const post of posts) {
+//         if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
+//             return post
+//         }
+//     }
+//     //if you get to this point:
+//     throw new Error(`all ${posts.length} posts have already been passed on/voted on`)
+// }
+
+async function search(): Promise<void> {
+    /*
+    this function uses the information gathered through votes to replace the current searchedPosts with new posts. It looks at tag commonnesses and constructs a search prompt that will return not too many and not too few posts (hopefully).
+    It does not reset the display - that's another function's jurisdiction.
+    */
+
+    if (votedPosts.size === 0) {
+        console.log(`cannot search when votedPosts.size is 0. vote on at least one post and then try again`)
+        return
+    }
+
+    //if there are some voted on posts:
+    //make a list of all tags in posts that are voted yes
+    //for each tag, if there is an instance of the tag that shows up in the posts voted no, take the ratio of good instances to bad instances as the score for that tag
+    //if no instance in posts voted no, compare the commonness of the tag in posts voted yes to the commonness of it in all posts, and take that as the score
+    //using the tags with scores, assemble a search prompt
+    //start with just the #1 tag
+    //too few posts? or it with the next tag and try again
+    //too many posts? and it with the next tag and try again
+    //get ~50 posts from the prompt and fill searchedPosts
+
+
+    //if there are some voted on posts:
+    //1 generate scores for each tag
+    //1.1 aggregate all tags present in votedPosts and take note of the votes of the posts they're found in
+    type arrayOfVotes = number[]
+    const tagsToVotes: Map<string, arrayOfVotes> = new Map() //mapping tags to arrays of the scores of the posts they're found in
+    let totalVotesYes = 0 //also figure out how many total votes yes and no there are
+    let totalVotesNo = 0
     for (const post of votedPosts.values()) {
-        tupleSetsWithScore.push({
-            tupleSet: tupleSet(post.tags),
-            score: scores.get(post.id)!
+        const vote = votes.get(post.id)!
+        for (const tag of post.tags.values()) {
+            //is there already an entry for this tag?
+            if (tagsToVotes.has(tag)) {
+                //if so, add this score to the existing scores
+                tagsToVotes.get(tag)!.push(vote)
+            } else {
+                tagsToVotes.set(tag, [vote])
+            }
+        }
+
+        if (vote > 0) {
+            totalVotesYes += vote
+        } else if (vote < 0) {
+            totalVotesNo += Math.abs(vote)
+        }
+    }
+
+    const tagsWithScore: { tag: string, score: number }[] = []
+
+
+    //1.2 find which tags will need to be scored asynchronously and which will not
+    const tagsWithoutVotesAgainst: string[] = [] //need asynchronous
+    const tagsWithVotesForAndAgainst: string[] = []
+    for (const entry of tagsToVotes) {
+        const tag = entry[0]
+        const votes = entry[1]
+
+        if (votes.every(vote => vote >= 0)) {
+            tagsWithoutVotesAgainst.push(tag)
+        } else {
+            tagsWithVotesForAndAgainst.push(tag)
+        }
+    }
+
+
+    //1.3 calculate scores for asynchronous tags
+    //1.3.1 initiate array of promises
+    const countAll = getCount("", {})
+    const tagsToCounts: Map<string, Promise<number>> = new Map()
+    for (const tag of tagsWithoutVotesAgainst) {
+        tagsToCounts.set(tag, getCount(tag, {}))
+    }
+
+    //1.3.2 use array of promises to calculate scores
+    for (let i = 0; i < tagsWithoutVotesAgainst.length; i++) {
+        const tag = tagsWithoutVotesAgainst[i]
+        const tagCount = await tagsToCounts.get(tag)!
+        const votes = tagsToVotes.get(tag)!
+
+        let tagTotalVotesYes = 0
+        for (const vote of votes) {
+            tagTotalVotesYes += vote
+        }
+        const commonnessAmongYes = tagTotalVotesYes / totalVotesYes
+
+        const tagAbsoluteCommonness = tagCount / (await countAll)
+
+        tagsWithScore.push({
+            tag: tag,
+            score: commonnessAmongYes / tagAbsoluteCommonness
         })
     }
 
-    //make a set of all tuples present in all votedPosts
-    const allTuples: Set<tuple> = new Set()
-    for (const { tupleSet } of tupleSetsWithScore) {
-        for (const tuple of tupleSet.values()) {
-            allTuples.add(tuple)
-        }
-    }
 
-    //assign an avgScore for each tuple by looking at the scores of the posts it's found in
-    const tuplesWithAvgScore: { tuple: tuple, avgScore: number }[] = []
-    for (const tuple of allTuples.values()) {
-        let scoreTotal = 0
-        let scoreInstances = 0
-        for (const { tupleSet, score } of tupleSetsWithScore) {
-            if (tupleSet.has(tuple)) {
-                scoreTotal += score
-                scoreInstances++
+    //1.4 calculate scores for synchronous tags
+    for (const tag of tagsWithVotesForAndAgainst) {
+        const votes = tagsToVotes.get(tag)!
+
+        let tagTotalVotesYes = 0
+        let tagTotalVotesNo = 0
+        for (const vote of votes) {
+            if (vote > 0) {
+                tagTotalVotesYes += vote
+            } else if (vote < 0) {
+                tagTotalVotesNo += Math.abs(vote)
             }
         }
-        const avgScore = scoreTotal / scoreInstances
-        tuplesWithAvgScore.push({ tuple, avgScore })
+
+        const commonnessAmongYes = tagTotalVotesYes / totalVotesYes
+        const commonnessAmongNo = tagTotalVotesNo / totalVotesNo
+
+        tagsWithScore.push({
+            tag: tag,
+            score: commonnessAmongYes / commonnessAmongNo
+        })
     }
 
-    tuplesWithAvgScore.sort(function (a, b) {
-        return b.avgScore - a.avgScore
+
+    //2 sort tags by score
+    tagsWithScore.sort(function (a, b) {
+        return b.score - a.score
     })
 
-    let prompt = ""
+
+
+    //3 construct prompt from tagsWithScore
+
+    //3.1 is the given scope narrow enough already?
     const scope = smartGetElement("scopeInput", HTMLInputElement).value
-    for (const { tuple } of tuplesWithAvgScore) {
-        prompt = `${scope} ${untuple(tuple).join(" ")}`
-        const count = await getCount(prompt, {})
-        if (count === 0) {
-            //the prompt is bad
-            continue
-        } else if (count > 200) {
-            //assume the prompt is good
-            break
-        } else {
-            const posts = await getPosts(prompt, 1000, {})
-            let approve = false
-            for (const post of posts) {
-                if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-                    //the prompt is good
-                    approve = true
-                    break
+    if (await getCount(scope, {}) < 100) {
+        searchedPosts = await getPosts(scope, 1000, {})
+        return
+    }//else:
+
+
+    //3.2 create workingPrompt and prompt() framework
+    /*
+    a workingPrompt like this:
+    [feet, armpit, [nsfw, green_eyes, french_fries], femboy]
+    would translate to this:
+    "feet armpit ( nsfw ~ green_eyes ~ french_fries ) femboy"
+
+    so the strings correspond to tags that will be combined via AND, and string arrays are tags that will be combined via OR
+    */
+    const workingPrompt: Array<string | string[]> = [scope]
+    function prompt(): string {
+        let p = ""
+        for (const term of workingPrompt) {
+            if (term instanceof Array) {
+                let termStr = "( " + term[0]
+                for (let i = 1; i < term.length; i++) {
+                    termStr += ` ~ ${term[i]}`
                 }
+                termStr += " )"
+                p += termStr + " "
+            } else {
+                p += term + " "
             }
-            if (approve) { break }
         }
-        console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`)
+        return p
+    }
+
+    //3.3 use workingPrompt framework to create and test different prompts
+    /*
+    narrow and widen the prompt repeatedly. If it's too narrow, use the next best tag to OR the most recent tag added to the prompt. If the scope is too broad, add the next best tag to the prompt.
+    */
+    for (const { tag } of tagsWithScore.slice(0, 21)) {
+        const count = await getCount(prompt(), {})
+        if (count > 1000) {
+            workingPrompt.push(tag)
+        } else if (count < 100) {
+            const finalElement = workingPrompt[workingPrompt.length - 1]
+            if (finalElement instanceof Array) {
+                finalElement.push(tag)
+            } else {
+                workingPrompt[workingPrompt.length - 1] = [finalElement, tag]
+            }
+        }
     }
 
 
+    //4 use prompt to generate posts
+    let posts = await getPosts(prompt(), 1000, {})
 
 
-    // let amtTuplesInPrompt = 1
-    // let prompt = ""
-    // const scope = smartGetElement("scopeInput", HTMLInputElement).value
-    // let loops = 0
-    // let looping = true
-    // while (looping) {
-    //     const tuples = tuplesWithAvgScore.slice(0, amtTuplesInPrompt)
-
-    //     //construct prompt from tuples array
-    //     prompt = `${scope} ( `
-    //     for (const { tuple } of tuples) {
-    //         prompt += untuple(tuple).join(" ") + " ~ "
-    //     }
-    //     prompt = prompt.slice(0, -2)
-    //     prompt += ")"
-
-
-    //     console.log(`Checking the prompt "${prompt}"...`)
-    //     //check the count of prompt
-    //     if (await getCount(prompt, {}) > 100) {
-    //         looping = false
-    //     } else {
-    //         amtTuplesInPrompt++
-    //     }
-
-    //     //safety feature
-    //     loops++
-    //     if (loops > 30) {
-    //         throw new Error(`while loop in findNewPost got past 30 loops, shouldn't happen`)
-    //     }
-    // }
-
-
-    const posts = await getPosts(prompt, 1000, {})
+    //5 remove posts already voted on
+    const goodPosts = []
     for (const post of posts) {
-        if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-            return post
+        if (!votedPosts.has(post.id)) {
+            goodPosts.push(post)
         }
     }
-    //if you get to this point:
-    throw new Error(`all ${posts.length} posts have already been passed on/voted on`)
+    posts = goodPosts
+
+
+    //6 sort posts
+    //6.1 generate a score for each post
+    const postScores: Map<number, number> = new Map() //mapping postIds to scores
+    for (const postToRate of posts) {
+        let score = 0
+        for (const entry of votedPosts) {
+            const votedPost = entry[1]
+            const vote = votes.get(votedPost.id)!
+
+            const amtCommonTags = tagsInCommon(votedPost.tags, postToRate.tags)
+            const avgAmtTags = (votedPost.tags.size + postToRate.tags.size) / 2
+
+            score += (amtCommonTags / avgAmtTags) * vote
+        }
+        postScores.set(postToRate.id, score)
+    }
+
+    //6.2 sort posts by score
+    posts.sort(function (a, b) {
+        return postScores.get(b.id)! - postScores.get(a.id)!
+    })
+
+
+    //7 set searchedPosts to sorted posts
+    searchedPosts = posts.slice(0, Math.min(posts.length, 100))
 }
 
 function resetDisplay(): void {
-    if (currentPost) {
-        smartGetElement("imageElement", HTMLImageElement).src = currentPost.thumbnailUrl
-        smartGetElement("imageLinkElement", HTMLAnchorElement).href = currentPost.siteUrl
+    //selected post display
+    const imageDiv = smartGetElement("currentImageDiv", HTMLDivElement)
+    if (selectedPost) {
+        imageDiv.innerText = ""
+
+        const anchorEle = document.createElement("a")
+        anchorEle.href = selectedPost.siteUrl
+        anchorEle.target = "_blank"
+        const imageEle = document.createElement("img")
+        imageEle.src = selectedPost.thumbnailUrl
+
+        anchorEle.appendChild(imageEle)
+        imageDiv.appendChild(anchorEle)
     } else {
-        console.log("cannot reset the post display because currentPost is undefined")
+        imageDiv.innerHTML = ""
+        imageDiv.innerText = `[currently no post is selected]`
     }
 
+    //search display
+    const searchPostDisplayDiv = smartGetElement("searchPostDisplay", HTMLDivElement)
+    searchPostDisplayDiv.innerHTML = ""
+    if (searchedPosts) {
+        for (const post of searchedPosts) {
+            const imgEle = document.createElement("img")
+            imgEle.src = post.thumbnailUrl
+            imgEle.addEventListener("click", function () {
+                selectedPost = post
+                resetDisplay()
+            })
+            searchPostDisplayDiv.appendChild(imgEle)
+        }
+    } else {
+        searchPostDisplayDiv.innerText = `[there are no searched posts]`
+    }
+
+    //summary display
     const sumDiv = smartGetElement("summaryDiv", HTMLDivElement)
     sumDiv.innerHTML = ""
     for (const post of votedPosts.values()) {
-        const score: number = scores.get(post.id)!
+        const score: number = votes.get(post.id)!
 
         const anchorEle = document.createElement("a")
         anchorEle.href = post.siteUrl
-        const imageEle = document.createElement("img")
-        imageEle.src = post.thumbnailUrl
-        anchorEle.appendChild(imageEle)
+        anchorEle.target = "_blank"
+        const imgEle = document.createElement("img")
+        imgEle.src = post.thumbnailUrl
+        anchorEle.appendChild(imgEle)
         const spanEle = document.createElement("span")
         spanEle.textContent = `Score: ${score}`
         const plusButton = document.createElement("button")
         plusButton.innerText = "+1"
         plusButton.addEventListener("click", function () {
-            scores.set(post.id, score + 1)
+            votes.set(post.id, score + 1)
             resetDisplay()
         })
         const minusButton = document.createElement("button")
         minusButton.innerText = "-1"
         minusButton.addEventListener("click", function () {
-            scores.set(post.id, score - 1)
+            votes.set(post.id, score - 1)
             resetDisplay()
         })
-        const xButtonEle = document.createElement("button")
-        xButtonEle.textContent = "Remove"
-        xButtonEle.addEventListener("click", function () {
+        const removeButtonEle = document.createElement("button")
+        removeButtonEle.textContent = "Remove"
+        removeButtonEle.addEventListener("click", function () {
             votedPosts.delete(post.id)
+            votes.delete(post.id)
             resetDisplay()
         })
         const postDiv = document.createElement("div")
@@ -218,7 +493,7 @@ function resetDisplay(): void {
         postDiv.appendChild(spanEle)
         postDiv.appendChild(minusButton)
         postDiv.appendChild(plusButton)
-        postDiv.appendChild(xButtonEle)
+        postDiv.appendChild(removeButtonEle)
 
         sumDiv.appendChild(postDiv)
     }
@@ -227,34 +502,16 @@ function resetDisplay(): void {
 window.onload = async function () {
     await resetAnchor()
     const scope = smartGetElement("scopeInput", HTMLInputElement).value
-    currentPost = (await getPosts(scope, 1, {}))[0]
     resetDisplay()
 }
 
-smartGetElement("bigYesButton", HTMLButtonElement).addEventListener("click", async function () { await vote(2) })
-// smartGetElement("bigYesButton", HTMLButtonElement).addEventListener("click", function () {
-//     const tagsSet: Set<string> = new Set()
-//     tagsSet.add("why")
-//     tagsSet.add("hello")
-//     tagsSet.add("you")
-//     tagsSet.add("good")
-//     tagsSet.add("lookin")
-//     tagsSet.add("gal")
-//     const tuplesSet = tupleSet(tagsSet)
-//     for (const tuple of tuplesSet.values()) {
-//         console.log(tuple)
-//     }
-// })
-smartGetElement("littleYesButton", HTMLButtonElement).addEventListener("click", async function () { await vote(1) })
-smartGetElement("evenStevenButton", HTMLButtonElement).addEventListener("click", async function () { await vote(0) })
-smartGetElement("littleNoButton", HTMLButtonElement).addEventListener("click", async function () { await vote(-1) })
-smartGetElement("bigNoButton", HTMLButtonElement).addEventListener("click", async function () { await vote(-2) })
+smartGetElement("voteYesButton", HTMLButtonElement).addEventListener("click", async function () { await vote(1) })
+smartGetElement("voteNoButton", HTMLButtonElement).addEventListener("click", async function () { await vote(-1) })
 
-smartGetElement("passButton", HTMLButtonElement).addEventListener("click", async function () {
-    passedPosts.add(currentPost!.id)
-    currentPost = await findNewPost()
+smartGetElement("addPostButton", HTMLButtonElement).addEventListener("click", async function () {
+    const id = Number(smartGetElement("addPostIdInput", HTMLInputElement).value)
+    const post = (await getPosts(`id:${id}`, 1, { lookInCache: false, storeInCache: false }))[0]
+    selectedPost = post
     resetDisplay()
 })
-
-
 

@@ -11,10 +11,10 @@ import { smartGetElement } from "./functions.js";
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
-const passedPosts = new Set(); //a set containing the ids of posts which the user has "passed" on
 const votedPosts = new Map(); //a map of postIds to posts for all the posts that have been voted on
-const scores = new Map(); //a map of postIds to scores
-let currentPost; //the post currently being displayed and voted on
+const votes = new Map(); //a map of postIds to scores
+let selectedPost; //the post currently being displayed and voted on
+let searchedPosts; //the posts that are being displayed in the search area
 function tuple(pt) {
     return (pt.sort()).join("+");
 }
@@ -44,158 +44,380 @@ function tupleSet(tags) {
     }
     return tuples;
 }
+function tagsInCommon(tagSetA, tagSetB) {
+    let sum = 0;
+    if (tagSetA.size < tagSetB.size) {
+        for (const tag of tagSetA.values()) {
+            if (tagSetB.has(tag)) {
+                sum++;
+            }
+        }
+    }
+    else {
+        for (const tag of tagSetB.values()) {
+            if (tagSetA.has(tag)) {
+                sum++;
+            }
+        }
+    }
+    return sum;
+}
 function vote(score) {
     return __awaiter(this, void 0, void 0, function* () {
-        scores.set(currentPost.id, score);
-        votedPosts.set(currentPost.id, currentPost);
-        currentPost = yield findNewPost();
-        resetDisplay();
+        if (selectedPost) {
+            votes.set(selectedPost.id, score);
+            votedPosts.set(selectedPost.id, selectedPost);
+            selectedPost = undefined;
+            yield search();
+            resetDisplay();
+        }
     });
 }
-function findNewPost() {
+// async function findNewPost(): Promise<Post> {
+//     //make a set of tuples for each post in votedPosts
+//     //make a set of all tuples present in all votedPosts
+//     //for each tuple, assign a score by looking at the posts it's present in and the score of said posts
+//     //factor in statistics somehow, blah blah
+//     //perform a search including the #1 best tuple
+//     //-> lots of results? exclude the worst tuple and check again (unfortunately I can't exclude an -or- statement, so maybe just exclude the worst singleton)
+//     //-> a small enough number of results? Go through each one and score it off of the scores figured out in step 3
+//     //the highest scoring post becomes the new currentPost
+//     //alphabetize an array of strings by just running sort on it with no function passed in
+//     //make a set of tuples for each post in votedPosts
+//     const tupleSetsWithScore: { tupleSet: Set<tuple>, score: number }[] = [] //an entry for each post, showing what tuples are in the post and what the post's score is
+//     for (const post of votedPosts.values()) {
+//         tupleSetsWithScore.push({
+//             tupleSet: tupleSet(post.tags),
+//             score: scores.get(post.id)!
+//         })
+//     }
+//     //make a set of all tuples present in all votedPosts
+//     const allTuples: Set<tuple> = new Set()
+//     for (const { tupleSet } of tupleSetsWithScore) {
+//         for (const tuple of tupleSet.values()) {
+//             allTuples.add(tuple)
+//         }
+//     }
+//     //assign an avgScore for each tuple by looking at the scores of the posts it's found in
+//     const tuplesWithAvgScore: { tuple: tuple, avgScore: number }[] = []
+//     for (const tuple of allTuples.values()) {
+//         let scoreTotal = 0
+//         let scoreInstances = 0
+//         for (const { tupleSet, score } of tupleSetsWithScore) {
+//             if (tupleSet.has(tuple)) {
+//                 scoreTotal += score
+//                 scoreInstances++
+//             }
+//         }
+//         const avgScore = scoreTotal / scoreInstances
+//         tuplesWithAvgScore.push({ tuple, avgScore })
+//     }
+//     tuplesWithAvgScore.sort(function (a, b) {
+//         return b.avgScore - a.avgScore
+//     })
+//     let prompt = ""
+//     const scope = smartGetElement("scopeInput", HTMLInputElement).value
+//     for (const { tuple } of tuplesWithAvgScore) {
+//         prompt = `${scope} ${untuple(tuple).join(" ")}`
+//         const count = await getCount(prompt, {})
+//         if (count === 0) {
+//             //the prompt is bad
+//             continue
+//         } else if (count > 200) {
+//             //assume the prompt is good
+//             break
+//         } else {
+//             const posts = await getPosts(prompt, 1000, {})
+//             let approve = false
+//             for (const post of posts) {
+//                 if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
+//                     //the prompt is good
+//                     approve = true
+//                     break
+//                 }
+//             }
+//             if (approve) { break }
+//         }
+//         console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`)
+//     }
+//     // let amtTuplesInPrompt = 1
+//     // let prompt = ""
+//     // const scope = smartGetElement("scopeInput", HTMLInputElement).value
+//     // let loops = 0
+//     // let looping = true
+//     // while (looping) {
+//     //     const tuples = tuplesWithAvgScore.slice(0, amtTuplesInPrompt)
+//     //     //construct prompt from tuples array
+//     //     prompt = `${scope} ( `
+//     //     for (const { tuple } of tuples) {
+//     //         prompt += untuple(tuple).join(" ") + " ~ "
+//     //     }
+//     //     prompt = prompt.slice(0, -2)
+//     //     prompt += ")"
+//     //     console.log(`Checking the prompt "${prompt}"...`)
+//     //     //check the count of prompt
+//     //     if (await getCount(prompt, {}) > 100) {
+//     //         looping = false
+//     //     } else {
+//     //         amtTuplesInPrompt++
+//     //     }
+//     //     //safety feature
+//     //     loops++
+//     //     if (loops > 30) {
+//     //         throw new Error(`while loop in findNewPost got past 30 loops, shouldn't happen`)
+//     //     }
+//     // }
+//     const posts = await getPosts(prompt, 1000, {})
+//     for (const post of posts) {
+//         if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
+//             return post
+//         }
+//     }
+//     //if you get to this point:
+//     throw new Error(`all ${posts.length} posts have already been passed on/voted on`)
+// }
+function search() {
     return __awaiter(this, void 0, void 0, function* () {
-        //make a set of tuples for each post in votedPosts
-        //make a set of all tuples present in all votedPosts
-        //for each tuple, assign a score by looking at the posts it's present in and the score of said posts
-        //factor in statistics somehow, blah blah
-        //perform a search including the #1 best tuple
-        //-> lots of results? exclude the worst tuple and check again (unfortunately I can't exclude an -or- statement, so maybe just exclude the worst singleton)
-        //-> a small enough number of results? Go through each one and score it off of the scores figured out in step 3
-        //the highest scoring post becomes the new currentPost
-        //alphabetize an array of strings by just running sort on it with no function passed in
-        //make a set of tuples for each post in votedPosts
-        const tupleSetsWithScore = []; //an entry for each post, showing what tuples are in the post and what the post's score is
+        /*
+        this function uses the information gathered through votes to replace the current searchedPosts with new posts. It looks at tag commonnesses and constructs a search prompt that will return not too many and not too few posts (hopefully).
+        It does not reset the display - that's another function's jurisdiction.
+        */
+        if (votedPosts.size === 0) {
+            console.log(`cannot search when votedPosts.size is 0. vote on at least one post and then try again`);
+            return;
+        }
+        const tagsToVotes = new Map(); //mapping tags to arrays of the scores of the posts they're found in
+        let totalVotesYes = 0; //also figure out how many total votes yes and no there are
+        let totalVotesNo = 0;
         for (const post of votedPosts.values()) {
-            tupleSetsWithScore.push({
-                tupleSet: tupleSet(post.tags),
-                score: scores.get(post.id)
-            });
-        }
-        //make a set of all tuples present in all votedPosts
-        const allTuples = new Set();
-        for (const { tupleSet } of tupleSetsWithScore) {
-            for (const tuple of tupleSet.values()) {
-                allTuples.add(tuple);
-            }
-        }
-        //assign an avgScore for each tuple by looking at the scores of the posts it's found in
-        const tuplesWithAvgScore = [];
-        for (const tuple of allTuples.values()) {
-            let scoreTotal = 0;
-            let scoreInstances = 0;
-            for (const { tupleSet, score } of tupleSetsWithScore) {
-                if (tupleSet.has(tuple)) {
-                    scoreTotal += score;
-                    scoreInstances++;
+            const vote = votes.get(post.id);
+            for (const tag of post.tags.values()) {
+                //is there already an entry for this tag?
+                if (tagsToVotes.has(tag)) {
+                    //if so, add this score to the existing scores
+                    tagsToVotes.get(tag).push(vote);
+                }
+                else {
+                    tagsToVotes.set(tag, [vote]);
                 }
             }
-            const avgScore = scoreTotal / scoreInstances;
-            tuplesWithAvgScore.push({ tuple, avgScore });
-        }
-        tuplesWithAvgScore.sort(function (a, b) {
-            return b.avgScore - a.avgScore;
-        });
-        let prompt = "";
-        const scope = smartGetElement("scopeInput", HTMLInputElement).value;
-        for (const { tuple } of tuplesWithAvgScore) {
-            prompt = `${scope} ${untuple(tuple).join(" ")}`;
-            const count = yield getCount(prompt, {});
-            if (count === 0) {
-                //the prompt is bad
-                continue;
+            if (vote > 0) {
+                totalVotesYes += vote;
             }
-            else if (count > 200) {
-                //assume the prompt is good
-                break;
+            else if (vote < 0) {
+                totalVotesNo += Math.abs(vote);
+            }
+        }
+        const tagsWithScore = [];
+        //1.2 find which tags will need to be scored asynchronously and which will not
+        const tagsWithoutVotesAgainst = []; //need asynchronous
+        const tagsWithVotesForAndAgainst = [];
+        for (const entry of tagsToVotes) {
+            const tag = entry[0];
+            const votes = entry[1];
+            if (votes.every(vote => vote >= 0)) {
+                tagsWithoutVotesAgainst.push(tag);
             }
             else {
-                const posts = yield getPosts(prompt, 1000, {});
-                let approve = false;
-                for (const post of posts) {
-                    if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-                        //the prompt is good
-                        approve = true;
-                        break;
+                tagsWithVotesForAndAgainst.push(tag);
+            }
+        }
+        //1.3 calculate scores for asynchronous tags
+        //1.3.1 initiate array of promises
+        const countAll = getCount("", {});
+        const tagsToCounts = new Map();
+        for (const tag of tagsWithoutVotesAgainst) {
+            tagsToCounts.set(tag, getCount(tag, {}));
+        }
+        //1.3.2 use array of promises to calculate scores
+        for (let i = 0; i < tagsWithoutVotesAgainst.length; i++) {
+            const tag = tagsWithoutVotesAgainst[i];
+            const tagCount = yield tagsToCounts.get(tag);
+            const votes = tagsToVotes.get(tag);
+            let tagTotalVotesYes = 0;
+            for (const vote of votes) {
+                tagTotalVotesYes += vote;
+            }
+            const commonnessAmongYes = tagTotalVotesYes / totalVotesYes;
+            const tagAbsoluteCommonness = tagCount / (yield countAll);
+            tagsWithScore.push({
+                tag: tag,
+                score: commonnessAmongYes / tagAbsoluteCommonness
+            });
+        }
+        //1.4 calculate scores for synchronous tags
+        for (const tag of tagsWithVotesForAndAgainst) {
+            const votes = tagsToVotes.get(tag);
+            let tagTotalVotesYes = 0;
+            let tagTotalVotesNo = 0;
+            for (const vote of votes) {
+                if (vote > 0) {
+                    tagTotalVotesYes += vote;
+                }
+                else if (vote < 0) {
+                    tagTotalVotesNo += Math.abs(vote);
+                }
+            }
+            const commonnessAmongYes = tagTotalVotesYes / totalVotesYes;
+            const commonnessAmongNo = tagTotalVotesNo / totalVotesNo;
+            tagsWithScore.push({
+                tag: tag,
+                score: commonnessAmongYes / commonnessAmongNo
+            });
+        }
+        //2 sort tags by score
+        tagsWithScore.sort(function (a, b) {
+            return b.score - a.score;
+        });
+        //3 construct prompt from tagsWithScore
+        //3.1 is the given scope narrow enough already?
+        const scope = smartGetElement("scopeInput", HTMLInputElement).value;
+        if ((yield getCount(scope, {})) < 100) {
+            searchedPosts = yield getPosts(scope, 1000, {});
+            return;
+        } //else:
+        //3.2 create workingPrompt and prompt() framework
+        /*
+        a workingPrompt like this:
+        [feet, armpit, [nsfw, green_eyes, french_fries], femboy]
+        would translate to this:
+        "feet armpit ( nsfw ~ green_eyes ~ french_fries ) femboy"
+    
+        so the strings correspond to tags that will be combined via AND, and string arrays are tags that will be combined via OR
+        */
+        const workingPrompt = [scope];
+        function prompt() {
+            let p = "";
+            for (const term of workingPrompt) {
+                if (term instanceof Array) {
+                    let termStr = "( " + term[0];
+                    for (let i = 1; i < term.length; i++) {
+                        termStr += ` ~ ${term[i]}`;
                     }
+                    termStr += " )";
+                    p += termStr + " ";
                 }
-                if (approve) {
-                    break;
+                else {
+                    p += term + " ";
                 }
             }
-            console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`);
+            return p;
         }
-        // let amtTuplesInPrompt = 1
-        // let prompt = ""
-        // const scope = smartGetElement("scopeInput", HTMLInputElement).value
-        // let loops = 0
-        // let looping = true
-        // while (looping) {
-        //     const tuples = tuplesWithAvgScore.slice(0, amtTuplesInPrompt)
-        //     //construct prompt from tuples array
-        //     prompt = `${scope} ( `
-        //     for (const { tuple } of tuples) {
-        //         prompt += untuple(tuple).join(" ") + " ~ "
-        //     }
-        //     prompt = prompt.slice(0, -2)
-        //     prompt += ")"
-        //     console.log(`Checking the prompt "${prompt}"...`)
-        //     //check the count of prompt
-        //     if (await getCount(prompt, {}) > 100) {
-        //         looping = false
-        //     } else {
-        //         amtTuplesInPrompt++
-        //     }
-        //     //safety feature
-        //     loops++
-        //     if (loops > 30) {
-        //         throw new Error(`while loop in findNewPost got past 30 loops, shouldn't happen`)
-        //     }
-        // }
-        const posts = yield getPosts(prompt, 1000, {});
+        //3.3 use workingPrompt framework to create and test different prompts
+        /*
+        narrow and widen the prompt repeatedly. If it's too narrow, use the next best tag to OR the most recent tag added to the prompt. If the scope is too broad, add the next best tag to the prompt.
+        */
+        for (const { tag } of tagsWithScore.slice(0, 21)) {
+            const count = yield getCount(prompt(), {});
+            if (count > 1000) {
+                workingPrompt.push(tag);
+            }
+            else if (count < 100) {
+                const finalElement = workingPrompt[workingPrompt.length - 1];
+                if (finalElement instanceof Array) {
+                    finalElement.push(tag);
+                }
+                else {
+                    workingPrompt[workingPrompt.length - 1] = [finalElement, tag];
+                }
+            }
+        }
+        //4 use prompt to generate posts
+        let posts = yield getPosts(prompt(), 1000, {});
+        //5 remove posts already voted on
+        const goodPosts = [];
         for (const post of posts) {
-            if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-                return post;
+            if (!votedPosts.has(post.id)) {
+                goodPosts.push(post);
             }
         }
-        //if you get to this point:
-        throw new Error(`all ${posts.length} posts have already been passed on/voted on`);
+        posts = goodPosts;
+        //6 sort posts
+        //6.1 generate a score for each post
+        const postScores = new Map(); //mapping postIds to scores
+        for (const postToRate of posts) {
+            let score = 0;
+            for (const entry of votedPosts) {
+                const votedPost = entry[1];
+                const vote = votes.get(votedPost.id);
+                const amtCommonTags = tagsInCommon(votedPost.tags, postToRate.tags);
+                const avgAmtTags = (votedPost.tags.size + postToRate.tags.size) / 2;
+                score += (amtCommonTags / avgAmtTags) * vote;
+            }
+            postScores.set(postToRate.id, score);
+        }
+        //6.2 sort posts by score
+        posts.sort(function (a, b) {
+            return postScores.get(b.id) - postScores.get(a.id);
+        });
+        //7 set searchedPosts to sorted posts
+        searchedPosts = posts.slice(0, Math.min(posts.length, 100));
     });
 }
 function resetDisplay() {
-    if (currentPost) {
-        smartGetElement("imageElement", HTMLImageElement).src = currentPost.thumbnailUrl;
-        smartGetElement("imageLinkElement", HTMLAnchorElement).href = currentPost.siteUrl;
+    //selected post display
+    const imageDiv = smartGetElement("currentImageDiv", HTMLDivElement);
+    if (selectedPost) {
+        imageDiv.innerText = "";
+        const anchorEle = document.createElement("a");
+        anchorEle.href = selectedPost.siteUrl;
+        anchorEle.target = "_blank";
+        const imageEle = document.createElement("img");
+        imageEle.src = selectedPost.thumbnailUrl;
+        anchorEle.appendChild(imageEle);
+        imageDiv.appendChild(anchorEle);
     }
     else {
-        console.log("cannot reset the post display because currentPost is undefined");
+        imageDiv.innerHTML = "";
+        imageDiv.innerText = `[currently no post is selected]`;
     }
+    //search display
+    const searchPostDisplayDiv = smartGetElement("searchPostDisplay", HTMLDivElement);
+    searchPostDisplayDiv.innerHTML = "";
+    if (searchedPosts) {
+        for (const post of searchedPosts) {
+            const imgEle = document.createElement("img");
+            imgEle.src = post.thumbnailUrl;
+            imgEle.addEventListener("click", function () {
+                selectedPost = post;
+                resetDisplay();
+            });
+            searchPostDisplayDiv.appendChild(imgEle);
+        }
+    }
+    else {
+        searchPostDisplayDiv.innerText = `[there are no searched posts]`;
+    }
+    //summary display
     const sumDiv = smartGetElement("summaryDiv", HTMLDivElement);
     sumDiv.innerHTML = "";
     for (const post of votedPosts.values()) {
-        const score = scores.get(post.id);
+        const score = votes.get(post.id);
         const anchorEle = document.createElement("a");
         anchorEle.href = post.siteUrl;
-        const imageEle = document.createElement("img");
-        imageEle.src = post.thumbnailUrl;
-        anchorEle.appendChild(imageEle);
+        anchorEle.target = "_blank";
+        const imgEle = document.createElement("img");
+        imgEle.src = post.thumbnailUrl;
+        anchorEle.appendChild(imgEle);
         const spanEle = document.createElement("span");
         spanEle.textContent = `Score: ${score}`;
         const plusButton = document.createElement("button");
         plusButton.innerText = "+1";
         plusButton.addEventListener("click", function () {
-            scores.set(post.id, score + 1);
+            votes.set(post.id, score + 1);
             resetDisplay();
         });
         const minusButton = document.createElement("button");
         minusButton.innerText = "-1";
         minusButton.addEventListener("click", function () {
-            scores.set(post.id, score - 1);
+            votes.set(post.id, score - 1);
             resetDisplay();
         });
-        const xButtonEle = document.createElement("button");
-        xButtonEle.textContent = "Remove";
-        xButtonEle.addEventListener("click", function () {
+        const removeButtonEle = document.createElement("button");
+        removeButtonEle.textContent = "Remove";
+        removeButtonEle.addEventListener("click", function () {
             votedPosts.delete(post.id);
+            votes.delete(post.id);
             resetDisplay();
         });
         const postDiv = document.createElement("div");
@@ -203,7 +425,7 @@ function resetDisplay() {
         postDiv.appendChild(spanEle);
         postDiv.appendChild(minusButton);
         postDiv.appendChild(plusButton);
-        postDiv.appendChild(xButtonEle);
+        postDiv.appendChild(removeButtonEle);
         sumDiv.appendChild(postDiv);
     }
 }
@@ -211,42 +433,20 @@ window.onload = function () {
     return __awaiter(this, void 0, void 0, function* () {
         yield resetAnchor();
         const scope = smartGetElement("scopeInput", HTMLInputElement).value;
-        currentPost = (yield getPosts(scope, 1, {}))[0];
         resetDisplay();
     });
 };
-smartGetElement("bigYesButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () { yield vote(2); });
-});
-// smartGetElement("bigYesButton", HTMLButtonElement).addEventListener("click", function () {
-//     const tagsSet: Set<string> = new Set()
-//     tagsSet.add("why")
-//     tagsSet.add("hello")
-//     tagsSet.add("you")
-//     tagsSet.add("good")
-//     tagsSet.add("lookin")
-//     tagsSet.add("gal")
-//     const tuplesSet = tupleSet(tagsSet)
-//     for (const tuple of tuplesSet.values()) {
-//         console.log(tuple)
-//     }
-// })
-smartGetElement("littleYesButton", HTMLButtonElement).addEventListener("click", function () {
+smartGetElement("voteYesButton", HTMLButtonElement).addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () { yield vote(1); });
 });
-smartGetElement("evenStevenButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () { yield vote(0); });
-});
-smartGetElement("littleNoButton", HTMLButtonElement).addEventListener("click", function () {
+smartGetElement("voteNoButton", HTMLButtonElement).addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () { yield vote(-1); });
 });
-smartGetElement("bigNoButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () { yield vote(-2); });
-});
-smartGetElement("passButton", HTMLButtonElement).addEventListener("click", function () {
+smartGetElement("addPostButton", HTMLButtonElement).addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
-        passedPosts.add(currentPost.id);
-        currentPost = yield findNewPost();
+        const id = Number(smartGetElement("addPostIdInput", HTMLInputElement).value);
+        const post = (yield getPosts(`id:${id}`, 1, { lookInCache: false, storeInCache: false }))[0];
+        selectedPost = post;
         resetDisplay();
     });
 });

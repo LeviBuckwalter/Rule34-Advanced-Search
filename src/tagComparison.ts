@@ -6,13 +6,15 @@ import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_f
 window.onload = resetAnchor
 
 async function compare() {
+    const amtPosts = 10000
+
     smartGetElement("answerDiv", HTMLElement).innerHTML = ""
 
     const tagA = smartGetElement("tagA", HTMLInputElement).value
     const tagB = smartGetElement("tagB", HTMLInputElement).value
-    const postsA = getPosts(tagA, 10000, { storeInCache: false })
-    const postsB = getPosts(tagB, 10000, { storeInCache: false })
-    const postsAll = getPosts("", 10000, {})
+    const postsA = getPosts(tagA, amtPosts, { storeInCache: false })
+    const postsB = getPosts(tagB, amtPosts, { storeInCache: false })
+    const postsAll = getPosts("", amtPosts, {})
     const censusA = new Census(await postsA)
     const censusB = new Census(await postsB)
     const censusAll = new Census(await postsAll)
