@@ -514,4 +514,8 @@ smartGetElement("addPostButton", HTMLButtonElement).addEventListener("click", as
     selectedPost = post
     resetDisplay()
 })
+smartGetElement("refreshButton", HTMLButtonElement).addEventListener("click", async function () {
+    await search()
+    resetDisplay()
+})
 

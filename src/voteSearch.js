@@ -450,3 +450,9 @@ smartGetElement("addPostButton", HTMLButtonElement).addEventListener("click", fu
         resetDisplay();
     });
 });
+smartGetElement("refreshButton", HTMLButtonElement).addEventListener("click", function () {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield search();
+        resetDisplay();
+    });
+});
