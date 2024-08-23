@@ -51,7 +51,7 @@ function compare() {
             }
             tags = tags.replace(/ /g, "+");
             console.log(tags);
-            return `<a href=https://rule34.xxx/index.php?page=post&s=list&tags=${tags} target="_blank">${obj.tag}</a>: ${Math.round(obj.tagAPerc * 1000) / 10}%, ${Math.round(obj.tagBPerc * 1000) / 10}%, ${Math.round(obj.allPerc * 1000) / 10}%<br>`;
+            return `<a href=https://rule34.xxx/index.php?page=post&s=list&tags=${tags} target="_blank">${obj.tag}</a>: ${Math.round(obj.tagAPerc * 1000000) / 10000}%, ${Math.round(obj.tagBPerc * 1000000) / 10000}%, ${Math.round(obj.allPerc * 1000000) / 10000}%<br>`;
         }
         tagsWithPercs.sort(function (a, b) {
             if (a.tagBPerc === 0 || b.tagBPerc === 0) {
