@@ -2,76 +2,79 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
     <title>Vote Search</title>
 </head>
 
 <body>
-    <h1>Vote Search</h1>
-    <div>
-        <a href="../index.html">Home Page</a>
-    </div>
-
-    <section>
-        <details>
-            <summary>Levi please explain wtf this page is and how to use it</summary>
-            Alright so basically
-        </details>
-    </section>
-
-    <section>
-        Options:
+    <main>
+        <h1>Vote Search</h1>
         <div>
-            <label for="scopeInput">Narrow the search</label>
-            <input type="text" id="scopeInput">
-        </div>
-        <div>
-            <label for="addPostIdInput">Add a post by id</label>
-            <input type="text" id="addPostIdInput">
-            <button id="addPostButton">Go</button>
-        </div>
-        <div>
-            <label for="minPostsInput">Minimum posts</label>
-            <input type="text" id="minPostsInput">
-        </div>
-        <div>
-            <label for="maxPostsInput">Maximum posts</label>
-            <input type="text" id="maxPostsInput">
+            <a href="../index.html">Home Page</a>
         </div>
 
+        <section>
+            <details>
+                <summary>Levi please explain wtf this page is and how to use it</summary>
+                Alright so basically
+            </details>
+        </section>
+
+        <section>
+            Options:
+            <div>
+                <label for="scopeInput">Narrow the search</label>
+                <input type="text" id="scopeInput">
+            </div>
+            <div>
+                <label for="addPostIdInput">Add a post by id</label>
+                <input type="text" id="addPostIdInput">
+                <button id="addPostButton">Go</button>
+            </div>
+            <div>
+                <label for="minPostsInput">Minimum posts</label>
+                <input type="text" id="minPostsInput">
+            </div>
+            <div>
+                <label for="maxPostsInput">Maximum posts</label>
+                <input type="text" id="maxPostsInput">
+            </div>
+
+
+            <div>
+                <button id="refreshButton" class="danger-btn">Refresh</button>
+            </div>
+        </section>
+
+        <section>
+            Vote:
+            <div>
+                <button id="voteYesButton">Vote yes</button>
+                <button id="voteNoButton">Vote no</button>
+            </div>
+        </section>
+
+        <section>
+            Selected post:
+            <div id="currentImageDiv"></div>
+        </section>
+
+        <section>
+            Search prompt:
+            <div id="promptDisplayDiv">[currently no prompt]</div>
+        </section>
+
+        <section>
+            Search:
+            <div id="searchPostDisplay"></div>
+        </section>
 
         <div>
-            <button id="refreshButton">Refresh</button>
+            Summary:
+            <div id="summaryDiv"></div>
         </div>
-    </section>
-
-    <section>
-        Vote:
-        <div>
-            <button id="voteYesButton">Vote yes</button>
-            <button id="voteNoButton">Vote no</button>
-        </div>
-    </section>
-
-    <section>
-        Selected post:
-        <div id="currentImageDiv"></div>
-    </section>
-
-    <section>
-        Search prompt:
-        <div id="promptDisplayDiv">[currently no prompt]</div>
-    </section>
-
-    <section>
-        Search:
-        <div id="searchPostDisplay"></div>
-    </section>
-
-    <div>
-        Summary:
         <div id="summaryDiv"></div>
-    </div>
-    <div id="summaryDiv"></div>
+    </main>
 </body>
 
 <script type="module" async="true" src="../src/voteSearch.js"></script>

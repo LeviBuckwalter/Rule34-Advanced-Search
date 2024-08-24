@@ -1,0 +1,81 @@
+html,
+body {
+
+    color: azure;
+    margin: 0;
+    /* Remove default margin */
+    height: 100%;
+    /* Ensure the body covers the full viewport height */
+
+    font-size: 16pt;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+img {
+    margin: 0.5em;
+    border: 0.25em solid rgb(32, 48, 34);
+    border-radius: 3px;
+}
+
+body {
+    background: rgb(16, 130, 0);
+    background: linear-gradient(48deg, rgba(16, 130, 0, 1) 0%, rgba(255, 241, 0, 1) 100%);
+    background-attachment: fixed;
+    display: grid;
+    grid-template-columns: 1fr 800px 1fr;
+    width: 100%;
+    background-size: cover;
+    /* Ensure the gradient covers the entire element */
+    background-repeat: no-repeat;
+    /* Prevent repetition */
+}
+
+main {
+    grid-column: 2 / 3;
+}
+
+section {
+    margin-block: 1rem;
+}
+
+.danger-btn {
+    background: hsl(52, 100%, 81%);
+    color: rgb(255, 4, 0);
+    border: 2px solid yellow;
+    border-radius: 2px;
+    box-shadow: 1px 1px 10px 10px rgba(255, 234, 0, 0.356);
+}
+
+.danger-btn:hover {
+    background: red;
+    color: white;
+}
+
+button {
+    padding: 0.75em;
+    font-size: inherit;
+    font-variant: small-caps;
+    font-weight: 900;
+}
+
+input[type="text"] {
+    padding-block: 0.3em;
+    padding-inline: 0.75em;
+    background-color: transparent;
+    color: white;
+    font-weight: bold;
+    border: 2px solid white;
+    border-radius: 4px;
+    margin-block: 0.5rem;
+    font-size: inherit;
+}
+
+a {
+    color: rgb(90, 254, 251);
+    text-decoration: dashed underline;
+    text-decoration-thickness: 2px;
+}
+
+a:hover {
+    text-decoration: solid underline;
+}
