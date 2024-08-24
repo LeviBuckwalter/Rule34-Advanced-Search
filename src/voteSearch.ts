@@ -76,125 +76,6 @@ async function vote(score: number): Promise<void> {
     }
 }
 
-// async function findNewPost(): Promise<Post> {
-//     //make a set of tuples for each post in votedPosts
-//     //make a set of all tuples present in all votedPosts
-//     //for each tuple, assign a score by looking at the posts it's present in and the score of said posts
-//     //factor in statistics somehow, blah blah
-//     //perform a search including the #1 best tuple
-//     //-> lots of results? exclude the worst tuple and check again (unfortunately I can't exclude an -or- statement, so maybe just exclude the worst singleton)
-//     //-> a small enough number of results? Go through each one and score it off of the scores figured out in step 3
-//     //the highest scoring post becomes the new currentPost
-
-//     //alphabetize an array of strings by just running sort on it with no function passed in
-
-//     //make a set of tuples for each post in votedPosts
-//     const tupleSetsWithScore: { tupleSet: Set<tuple>, score: number }[] = [] //an entry for each post, showing what tuples are in the post and what the post's score is
-//     for (const post of votedPosts.values()) {
-//         tupleSetsWithScore.push({
-//             tupleSet: tupleSet(post.tags),
-//             score: scores.get(post.id)!
-//         })
-//     }
-
-//     //make a set of all tuples present in all votedPosts
-//     const allTuples: Set<tuple> = new Set()
-//     for (const { tupleSet } of tupleSetsWithScore) {
-//         for (const tuple of tupleSet.values()) {
-//             allTuples.add(tuple)
-//         }
-//     }
-
-//     //assign an avgScore for each tuple by looking at the scores of the posts it's found in
-//     const tuplesWithAvgScore: { tuple: tuple, avgScore: number }[] = []
-//     for (const tuple of allTuples.values()) {
-//         let scoreTotal = 0
-//         let scoreInstances = 0
-//         for (const { tupleSet, score } of tupleSetsWithScore) {
-//             if (tupleSet.has(tuple)) {
-//                 scoreTotal += score
-//                 scoreInstances++
-//             }
-//         }
-//         const avgScore = scoreTotal / scoreInstances
-//         tuplesWithAvgScore.push({ tuple, avgScore })
-//     }
-
-//     tuplesWithAvgScore.sort(function (a, b) {
-//         return b.avgScore - a.avgScore
-//     })
-
-//     let prompt = ""
-//     const scope = smartGetElement("scopeInput", HTMLInputElement).value
-//     for (const { tuple } of tuplesWithAvgScore) {
-//         prompt = `${scope} ${untuple(tuple).join(" ")}`
-//         const count = await getCount(prompt, {})
-//         if (count === 0) {
-//             //the prompt is bad
-//             continue
-//         } else if (count > 200) {
-//             //assume the prompt is good
-//             break
-//         } else {
-//             const posts = await getPosts(prompt, 1000, {})
-//             let approve = false
-//             for (const post of posts) {
-//                 if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-//                     //the prompt is good
-//                     approve = true
-//                     break
-//                 }
-//             }
-//             if (approve) { break }
-//         }
-//         console.log(`The prompt "${prompt}" has ${count} results. The next prompt will be checked.`)
-//     }
-
-
-
-
-//     // let amtTuplesInPrompt = 1
-//     // let prompt = ""
-//     // const scope = smartGetElement("scopeInput", HTMLInputElement).value
-//     // let loops = 0
-//     // let looping = true
-//     // while (looping) {
-//     //     const tuples = tuplesWithAvgScore.slice(0, amtTuplesInPrompt)
-
-//     //     //construct prompt from tuples array
-//     //     prompt = `${scope} ( `
-//     //     for (const { tuple } of tuples) {
-//     //         prompt += untuple(tuple).join(" ") + " ~ "
-//     //     }
-//     //     prompt = prompt.slice(0, -2)
-//     //     prompt += ")"
-
-
-//     //     console.log(`Checking the prompt "${prompt}"...`)
-//     //     //check the count of prompt
-//     //     if (await getCount(prompt, {}) > 100) {
-//     //         looping = false
-//     //     } else {
-//     //         amtTuplesInPrompt++
-//     //     }
-
-//     //     //safety feature
-//     //     loops++
-//     //     if (loops > 30) {
-//     //         throw new Error(`while loop in findNewPost got past 30 loops, shouldn't happen`)
-//     //     }
-//     // }
-
-
-//     const posts = await getPosts(prompt, 1000, {})
-//     for (const post of posts) {
-//         if (!passedPosts.has(post.id) && !votedPosts.has(post.id)) {
-//             return post
-//         }
-//     }
-//     //if you get to this point:
-//     throw new Error(`all ${posts.length} posts have already been passed on/voted on`)
-// }
 
 async function search(): Promise<void> {
     /*
@@ -459,9 +340,17 @@ function resetDisplay(): void {
         imageEle.style.maxHeight = "80vh"
         imageEle.style.width = "auto"
         imageEle.style.height = "auto"
-
         anchorEle.appendChild(imageEle)
+
+        const tagsDiv = document.createElement("div")
+        let tagsStr = ""
+        for (const tag of selectedPost.tags.values()) {
+            tagsStr += `${tag}, `
+        }
+        tagsDiv.innerText = tagsStr
+
         imageDiv.appendChild(anchorEle)
+        imageDiv.appendChild(tagsDiv)
     } else {
         imageDiv.innerHTML = ""
         imageDiv.innerText = `[currently no post is selected]`
