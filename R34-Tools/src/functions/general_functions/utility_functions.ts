@@ -22,6 +22,7 @@ type rawPost = {
     score: number
     comment_count: number
     preview_url: string
+    sample_url: string
 }
 export function processRawPosts(rawPosts: rawPost[]): Post[] {
     function isSafe(tag: string): boolean {
@@ -35,7 +36,7 @@ export function processRawPosts(rawPosts: rawPost[]): Post[] {
         return safe
     }
     const processed: Post[] = []
-    
+
     for (const rawPost of rawPosts) {
         let tags: string[] = rawPost.tags.split(" ")
         tags = tags.filter(isSafe)
@@ -49,7 +50,8 @@ export function processRawPosts(rawPosts: rawPost[]): Post[] {
             rawPost.rating,
             rawPost.score,
             rawPost.comment_count,
-            rawPost.preview_url.substring(38, rawPost.preview_url.length-4)
+            rawPost.preview_url.substring(38, rawPost.preview_url.length - 4),
+            rawPost.sample_url.substring(35, rawPost.sample_url.length - 4)
         ))
     }
     return processed
