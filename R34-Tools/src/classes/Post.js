@@ -1,24 +1,15 @@
 export class Post {
-    constructor(id, tags, rating, score, commentCount, thumbnailId, mediumImageId) {
+    constructor(id, tags, rating, score, commentCount, thumbnailUrl, mediumImageUrl) {
         this.id = id;
         this.tags = tags;
         this.rating = rating;
         this.score = score;
         this.commentCount = commentCount;
-        this.thumbnailId = thumbnailId;
-        this.mediumImageId = mediumImageId;
+        this.thumbnailUrl = thumbnailUrl;
+        this.mediumImageUrl = mediumImageUrl;
     }
     get siteUrl() {
         return `https://rule34.xxx/index.php?page=post&s=view&id=${this.id}`;
-    }
-    get thumbnailUrl() {
-        return `https://api-cdn.rule34.xxx/thumbnails/${this.thumbnailId}.jpg`;
-    }
-    get mediumImageUrl() {
-        return `https://api-cdn.rule34.xxx/samples/${this.mediumImageId}.jpg`;
-    }
-    toSeed() {
-        return [this.id, this.tags, this.rating, this.score, this.commentCount, this.thumbnailId];
     }
 }
 /*

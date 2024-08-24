@@ -5,24 +5,12 @@ export class Post {
         public rating: string,
         public score: number,
         public commentCount: number,
-        private thumbnailId: string,
-        private mediumImageId: string
+        public thumbnailUrl: string,
+        public mediumImageUrl: string
     ) { }
 
     get siteUrl(): string {
         return `https://rule34.xxx/index.php?page=post&s=view&id=${this.id}`
-    }
-
-    get thumbnailUrl(): string {
-        return `https://api-cdn.rule34.xxx/thumbnails/${this.thumbnailId}.jpg`
-    }
-
-    get mediumImageUrl() {
-        return `https://api-cdn.rule34.xxx/samples/${this.mediumImageId}.jpg`
-    }
-
-    toSeed(): [number, Set<string>, string, number, number, string] {
-        return [this.id, this.tags, this.rating, this.score, this.commentCount, this.thumbnailId]
     }
 }
 
