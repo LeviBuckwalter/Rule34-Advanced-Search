@@ -12,23 +12,33 @@
     </div>
 
     <section>
-        Explainer:
-        <div>
-            [collapsable explanation]
-        </div>
+        <details>
+            <summary>Levi please explain wtf this page is and how to use it</summary>
+            Alright so basically
+        </details>
     </section>
 
     <section>
         Options:
+        <div>
+            <label for="scopeInput">Narrow the search</label>
+            <input type="text" id="scopeInput">
+        </div>
         <div>
             <label for="addPostIdInput">Add a post by id</label>
             <input type="text" id="addPostIdInput">
             <button id="addPostButton">Go</button>
         </div>
         <div>
-            <label for="scopeInput">Narrow the search</label>
-            <input type="text" id="scopeInput">
+            <label for="minPostsInput">Minimum posts</label>
+            <input type="text" id="minPostsInput">
         </div>
+        <div>
+            <label for="maxPostsInput">Maximum posts</label>
+            <input type="text" id="maxPostsInput">
+        </div>
+
+
         <div>
             <button id="refreshButton">Refresh</button>
         </div>
@@ -45,6 +55,11 @@
     <section>
         Selected post:
         <div id="currentImageDiv"></div>
+    </section>
+
+    <section>
+        Search prompt:
+        <div id="promptDisplayDiv">[currently no prompt]</div>
     </section>
 
     <section>

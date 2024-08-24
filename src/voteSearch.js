@@ -182,8 +182,9 @@ function search() {
         this function uses the information gathered through votes to replace the current searchedPosts with new posts. It looks at tag commonnesses and constructs a search prompt that will return not too many and not too few posts (hopefully).
         It does not reset the display - that's another function's jurisdiction.
         */
+        const scope = smartGetElement("scopeInput", HTMLInputElement).value;
         if (votedPosts.size === 0) {
-            console.log(`cannot search when votedPosts.size is 0. vote on at least one post and then try again`);
+            searchedPosts = yield getPosts(scope, 100, {});
             return;
         }
         const tagsToVotes = new Map(); //mapping tags to arrays of the scores of the posts they're found in
@@ -270,60 +271,76 @@ function search() {
             return b.score - a.score;
         });
         //3 construct prompt from tagsWithScore
-        //3.1 is the given scope narrow enough already?
-        const scope = smartGetElement("scopeInput", HTMLInputElement).value;
-        if ((yield getCount(scope, {})) < 100) {
-            searchedPosts = yield getPosts(scope, 1000, {});
-            return;
-        } //else:
-        //3.2 create workingPrompt and prompt() framework
-        /*
-        a workingPrompt like this:
-        [feet, armpit, [nsfw, green_eyes, french_fries], femboy]
-        would translate to this:
-        "feet armpit ( nsfw ~ green_eyes ~ french_fries ) femboy"
+        let prompt;
+        const minPostsInput = smartGetElement("minPostsInput", HTMLInputElement);
+        const maxPostsInput = smartGetElement("maxPostsInput", HTMLInputElement);
+        if (Number(minPostsInput.value) === 0) {
+            minPostsInput.value = `${100}`;
+        }
+        if (Number(maxPostsInput.value) < Number(minPostsInput.value)) {
+            maxPostsInput.value = `${Number(minPostsInput.value) * 2}`;
+        }
+        const minPosts = Number(minPostsInput.value);
+        const maxPosts = Number(maxPostsInput.value);
+        const promptDisplayDiv = smartGetElement("promptDisplayDiv", HTMLDivElement);
+        if ((yield getCount(scope, {})) < minPosts) {
+            //3a if the scope is narrow enough already
+            console.log(`determined scope was already narrow enough. prompt = "${scope}"`);
+            prompt = scope;
+        }
+        else {
+            //3b.1 create workingPrompt and prompt() framework
+            /*
+            a workingPrompt like this:
+            [feet, armpit, [nsfw, green_eyes, french_fries], femboy]
+            would translate to this:
+            "feet armpit ( nsfw ~ green_eyes ~ french_fries ) femboy"
     
-        so the strings correspond to tags that will be combined via AND, and string arrays are tags that will be combined via OR
-        */
-        const workingPrompt = [scope];
-        function prompt() {
-            let p = "";
-            for (const term of workingPrompt) {
-                if (term instanceof Array) {
-                    let termStr = "( " + term[0];
-                    for (let i = 1; i < term.length; i++) {
-                        termStr += ` ~ ${term[i]}`;
+            so the strings correspond to tags that will be combined via AND, and string arrays are tags that will be combined via OR
+            */
+            const workingPrompt = [scope];
+            function stringifyWorkingPrompt() {
+                let p = "";
+                for (const term of workingPrompt) {
+                    if (term instanceof Array) {
+                        let termStr = "( " + term[0];
+                        for (let i = 1; i < term.length; i++) {
+                            termStr += ` ~ ${term[i]}`;
+                        }
+                        termStr += " )";
+                        p += termStr + " ";
                     }
-                    termStr += " )";
-                    p += termStr + " ";
+                    else {
+                        p += term + " ";
+                    }
                 }
-                else {
-                    p += term + " ";
+                return p;
+            }
+            //3b.2 use workingPrompt framework to create and test different prompts
+            /*
+            narrow and widen the prompt repeatedly. If it's too narrow, use the next best tag to OR the most recent tag added to the prompt. If the scope is too broad, add the next best tag to the prompt.
+            */
+            for (const { tag } of tagsWithScore.slice(0, 21)) {
+                const count = yield getCount(stringifyWorkingPrompt(), {});
+                promptDisplayDiv.innerText = `Testing the prompt "${stringifyWorkingPrompt()}", which returns ${count} posts...`;
+                if (count > maxPosts) {
+                    workingPrompt.push(tag);
+                }
+                else if (count < minPosts) {
+                    const finalElement = workingPrompt[workingPrompt.length - 1];
+                    if (finalElement instanceof Array) {
+                        finalElement.push(tag);
+                    }
+                    else {
+                        workingPrompt[workingPrompt.length - 1] = [finalElement, tag];
+                    }
                 }
             }
-            return p;
+            prompt = stringifyWorkingPrompt();
         }
-        //3.3 use workingPrompt framework to create and test different prompts
-        /*
-        narrow and widen the prompt repeatedly. If it's too narrow, use the next best tag to OR the most recent tag added to the prompt. If the scope is too broad, add the next best tag to the prompt.
-        */
-        for (const { tag } of tagsWithScore.slice(0, 21)) {
-            const count = yield getCount(prompt(), {});
-            if (count > 1000) {
-                workingPrompt.push(tag);
-            }
-            else if (count < 100) {
-                const finalElement = workingPrompt[workingPrompt.length - 1];
-                if (finalElement instanceof Array) {
-                    finalElement.push(tag);
-                }
-                else {
-                    workingPrompt[workingPrompt.length - 1] = [finalElement, tag];
-                }
-            }
-        }
+        promptDisplayDiv.innerText = `Final prompt: "${prompt}", which returns ${yield getCount(prompt, {})} posts.`;
         //4 use prompt to generate posts
-        let posts = yield getPosts(prompt(), 1000, {});
+        let posts = yield getPosts(prompt, maxPosts, {});
         //5 remove posts already voted on
         const goodPosts = [];
         for (const post of posts) {
@@ -337,12 +354,11 @@ function search() {
         const postScores = new Map(); //mapping postIds to scores
         for (const postToRate of posts) {
             let score = 0;
-            for (const entry of votedPosts) {
-                const votedPost = entry[1];
+            for (const votedPost of votedPosts.values()) {
                 const vote = votes.get(votedPost.id);
                 const amtCommonTags = tagsInCommon(votedPost.tags, postToRate.tags);
                 const avgAmtTags = (votedPost.tags.size + postToRate.tags.size) / 2;
-                score += (amtCommonTags / avgAmtTags) * vote;
+                score += Math.pow((amtCommonTags / avgAmtTags) * vote, 2);
             }
             postScores.set(postToRate.id, score);
         }
@@ -363,7 +379,7 @@ function resetDisplay() {
         anchorEle.href = selectedPost.siteUrl;
         anchorEle.target = "_blank";
         const imageEle = document.createElement("img");
-        imageEle.src = selectedPost.thumbnailUrl;
+        imageEle.src = selectedPost.mediumImageUrl;
         anchorEle.appendChild(imageEle);
         imageDiv.appendChild(anchorEle);
     }
