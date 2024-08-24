@@ -277,7 +277,7 @@ function resetDisplay() {
         anchorEle.target = "_blank";
         const imageEle = document.createElement("img");
         imageEle.src = selectedPost.mediumImageUrl;
-        imageEle.style.maxWidth = "100vw";
+        imageEle.style.maxWidth = "80vw";
         imageEle.style.maxHeight = "80vh";
         imageEle.style.width = "auto";
         imageEle.style.height = "auto";
