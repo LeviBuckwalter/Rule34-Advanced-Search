@@ -11,10 +11,12 @@ import { smartGetElement } from "./functions.js";
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
-const votedPosts = new Map(); //a map of postIds to posts for all the posts that have been voted on
+const ratedPosts = new Map(); //a map of postIds to posts for all the posts that have been voted on
 const votes = new Map(); //a map of postIds to scores
 let selectedPost; //the post currently being displayed and voted on
-let searchedPosts; //the posts that are being displayed in the search area
+let searchedPosts; //the posts that have been scored by the search function (not all of these are neccesarily being displayed)
+let searchPageNumber = 1;
+let postsPerPage = 20;
 function tuple(pt) {
     return (pt.sort()).join("+");
 }
@@ -62,13 +64,16 @@ function tagsInCommon(tagSetA, tagSetB) {
     }
     return sum;
 }
-function vote(score) {
+function rate(rating) {
     return __awaiter(this, void 0, void 0, function* () {
         if (selectedPost) {
-            votes.set(selectedPost.id, score);
-            votedPosts.set(selectedPost.id, selectedPost);
-            selectedPost = undefined;
-            yield search();
+            if (rating === 0 || !votes.has(selectedPost.id)) {
+                votes.set(selectedPost.id, rating);
+            }
+            else {
+                votes.set(selectedPost.id, votes.get(selectedPost.id) + rating);
+            }
+            ratedPosts.set(selectedPost.id, selectedPost);
             resetDisplay();
         }
     });
@@ -80,92 +85,58 @@ function search() {
         It does not reset the display - that's another function's jurisdiction.
         */
         const scope = smartGetElement("scopeInput", HTMLInputElement).value;
-        if (votedPosts.size === 0) {
-            searchedPosts = yield getPosts(scope, 100, {});
+        if (ratedPosts.size === 0) {
+            searchedPosts = yield getPosts(scope, 1000, {});
             return;
         }
-        const tagsToVotes = new Map(); //mapping tags to arrays of the scores of the posts they're found in
-        let totalVotesYes = 0; //also figure out how many total votes yes and no there are
-        let totalVotesNo = 0;
-        for (const post of votedPosts.values()) {
+        //if there are some voted on posts:
+        //make a list of all tags in posts that are voted yes
+        //for each tag, if there is an instance of the tag that shows up in the posts voted no, take the ratio of good instances to bad instances as the score for that tag
+        //if no instance in posts voted no, compare the commonness of the tag in posts voted yes to the commonness of it in all posts, and take that as the score
+        //using the tags with scores, assemble a search prompt
+        //start with just the #1 tag
+        //too few posts? or it with the next tag and try again
+        //too many posts? and it with the next tag and try again
+        //get ~50 posts from the prompt and fill searchedPosts
+        //if there are some voted on posts:
+        //1 generate scores for each tag
+        //1.1 aggregate all tags present in votedPosts and find the center of mass of its score
+        const tags = []; //an array of all tags found in votedPosts
+        const tagsToVotes = new Map(); //a map of every tag with its vote data
+        for (const post of ratedPosts.values()) {
             const vote = votes.get(post.id);
             for (const tag of post.tags.values()) {
+                tags.push(tag);
                 //is there already an entry for this tag?
                 if (tagsToVotes.has(tag)) {
                     //if so, add this score to the existing scores
-                    tagsToVotes.get(tag).push(vote);
+                    const entry = tagsToVotes.get(tag);
+                    entry.totalScore += vote;
+                    entry.amtSamples++;
                 }
                 else {
-                    tagsToVotes.set(tag, [vote]);
+                    tagsToVotes.set(tag, { totalScore: vote, amtSamples: 1 });
                 }
-            }
-            if (vote > 0) {
-                totalVotesYes += vote;
-            }
-            else if (vote < 0) {
-                totalVotesNo += Math.abs(vote);
             }
         }
         const tagsWithScore = [];
-        //1.2 find which tags will need to be scored asynchronously and which will not
-        const tagsWithoutVotesAgainst = []; //need asynchronous
-        const tagsWithVotesForAndAgainst = [];
-        for (const entry of tagsToVotes) {
-            const tag = entry[0];
-            const votes = entry[1];
-            if (votes.every(vote => vote >= 0)) {
-                tagsWithoutVotesAgainst.push(tag);
-            }
-            else {
-                tagsWithVotesForAndAgainst.push(tag);
-            }
-        }
-        //1.3 calculate scores for asynchronous tags
-        //1.3.1 initiate array of promises
+        //1.2 find totalCount of each tag
         const countAll = getCount("", {});
         const tagsToCounts = new Map();
-        for (const tag of tagsWithoutVotesAgainst) {
+        for (const tag of tags) {
             tagsToCounts.set(tag, getCount(tag, {}));
         }
-        //1.3.2 use array of promises to calculate scores
-        for (let i = 0; i < tagsWithoutVotesAgainst.length; i++) {
-            const tag = tagsWithoutVotesAgainst[i];
-            const tagCount = yield tagsToCounts.get(tag);
-            const votes = tagsToVotes.get(tag);
-            let tagTotalVotesYes = 0;
-            for (const vote of votes) {
-                tagTotalVotesYes += vote;
-            }
-            const commonnessAmongYes = tagTotalVotesYes / totalVotesYes;
-            const tagAbsoluteCommonness = tagCount / (yield countAll);
-            tagsWithScore.push({
-                tag: tag,
-                score: commonnessAmongYes / tagAbsoluteCommonness
-            });
-        }
-        //1.4 calculate scores for synchronous tags
-        for (const tag of tagsWithVotesForAndAgainst) {
-            const votes = tagsToVotes.get(tag);
-            let tagTotalVotesYes = 0;
-            let tagTotalVotesNo = 0;
-            for (const vote of votes) {
-                if (vote > 0) {
-                    tagTotalVotesYes += vote;
-                }
-                else if (vote < 0) {
-                    tagTotalVotesNo += Math.abs(vote);
-                }
-            }
-            const commonnessAmongYes = tagTotalVotesYes / totalVotesYes;
-            const commonnessAmongNo = tagTotalVotesNo / totalVotesNo;
-            tagsWithScore.push({
-                tag: tag,
-                score: commonnessAmongYes / commonnessAmongNo
-            });
+        //1.3 use center of mass and count to make score for each tag
+        const tagsToScore = new Map();
+        for (const tag of tags) {
+            const centerOfMass = tagsToVotes.get(tag).totalScore / tagsToVotes.get(tag).amtSamples;
+            const commonness = (yield tagsToCounts.get(tag)) / (yield countAll);
+            const tagScore = centerOfMass * Math.pow(commonness, 0.1);
+            console.log(`tag: "${tag}", centerOfMass: ${centerOfMass}, commonness: ${commonness}, score: ${tagScore}`);
         }
         //2 sort tags by score
-        tagsWithScore.sort(function (a, b) {
-            return b.score - a.score;
+        tags.sort(function (a, b) {
+            return tagsToScore.get(b) - tagsToScore.get(a);
         });
         //3 construct prompt from tagsWithScore
         let prompt;
@@ -217,7 +188,7 @@ function search() {
             /*
             narrow and widen the prompt repeatedly. If it's too narrow, use the next best tag to OR the most recent tag added to the prompt. If the scope is too broad, add the next best tag to the prompt.
             */
-            for (const { tag } of tagsWithScore.slice(0, 21)) {
+            for (const tag of tags.slice(0, 21)) {
                 const count = yield getCount(stringifyWorkingPrompt(), {});
                 promptDisplayDiv.innerText = `Testing the prompt "${stringifyWorkingPrompt()}", which returns ${count} posts...`;
                 if (count > maxPosts) {
@@ -241,7 +212,7 @@ function search() {
         //5 remove posts already voted on
         const goodPosts = [];
         for (const post of posts) {
-            if (!votedPosts.has(post.id)) {
+            if (!ratedPosts.has(post.id)) {
                 goodPosts.push(post);
             }
         }
@@ -251,7 +222,7 @@ function search() {
         const postScores = new Map(); //mapping postIds to scores
         for (const postToRate of posts) {
             let score = 0;
-            for (const votedPost of votedPosts.values()) {
+            for (const votedPost of ratedPosts.values()) {
                 const vote = votes.get(votedPost.id);
                 const amtCommonTags = tagsInCommon(votedPost.tags, postToRate.tags);
                 const avgAmtTags = (votedPost.tags.size + postToRate.tags.size) / 2;
@@ -264,10 +235,18 @@ function search() {
             return postScores.get(b.id) - postScores.get(a.id);
         });
         //7 set searchedPosts to sorted posts
-        searchedPosts = posts.slice(0, Math.min(posts.length, 100));
+        searchedPosts = posts;
     });
 }
 function resetDisplay() {
+    //rating display
+    const rateSpan = smartGetElement("rateSpan", HTMLSpanElement);
+    if (selectedPost && votes.has(selectedPost.id)) {
+        rateSpan.innerText = `rating: ${votes.get(selectedPost.id)}`;
+    }
+    else {
+        rateSpan.innerHTML = "";
+    }
     //selected post display
     const imageDiv = smartGetElement("currentImageDiv", HTMLDivElement);
     if (selectedPost) {
@@ -282,24 +261,74 @@ function resetDisplay() {
         imageEle.style.width = "auto";
         imageEle.style.height = "auto";
         anchorEle.appendChild(imageEle);
-        const tagsDiv = document.createElement("div");
+        const tagsDetails = document.createElement("details");
         let tagsStr = "";
         for (const tag of selectedPost.tags.values()) {
             tagsStr += `${tag}, `;
         }
-        tagsDiv.innerText = tagsStr;
+        tagsStr = tagsStr.slice(0, tagsStr.length - 2);
+        tagsDetails.innerText = tagsStr;
+        const tagsDetailsSummary = document.createElement("summary");
+        tagsDetailsSummary.innerText = "Tags";
+        tagsDetails.appendChild(tagsDetailsSummary);
         imageDiv.appendChild(anchorEle);
-        imageDiv.appendChild(tagsDiv);
+        imageDiv.appendChild(tagsDetails);
     }
     else {
         imageDiv.innerHTML = "";
         imageDiv.innerText = `[currently no post is selected]`;
     }
+    //summary display
+    const sumDiv = smartGetElement("summaryDiv", HTMLDivElement);
+    sumDiv.innerHTML = "";
+    if (ratedPosts.size === 0) {
+        sumDiv.innerText = "[there are no rated posts to display]";
+    }
+    else {
+        for (const post of ratedPosts.values()) {
+            const score = votes.get(post.id);
+            const anchorEle = document.createElement("a");
+            anchorEle.href = post.siteUrl;
+            anchorEle.target = "_blank";
+            const imgEle = document.createElement("img");
+            imgEle.src = post.thumbnailUrl;
+            anchorEle.appendChild(imgEle);
+            const spanEle = document.createElement("span");
+            spanEle.textContent = `Score: ${score}`;
+            const plusButton = document.createElement("button");
+            plusButton.innerText = "+1";
+            plusButton.addEventListener("click", function () {
+                votes.set(post.id, score + 1);
+                resetDisplay();
+            });
+            const minusButton = document.createElement("button");
+            minusButton.innerText = "-1";
+            minusButton.addEventListener("click", function () {
+                votes.set(post.id, score - 1);
+                resetDisplay();
+            });
+            const removeButtonEle = document.createElement("button");
+            removeButtonEle.textContent = "Remove";
+            removeButtonEle.addEventListener("click", function () {
+                ratedPosts.delete(post.id);
+                votes.delete(post.id);
+                resetDisplay();
+            });
+            const postDiv = document.createElement("div");
+            postDiv.appendChild(anchorEle);
+            postDiv.appendChild(spanEle);
+            postDiv.appendChild(minusButton);
+            postDiv.appendChild(plusButton);
+            postDiv.appendChild(removeButtonEle);
+            sumDiv.appendChild(postDiv);
+        }
+    }
     //search display
     const searchPostDisplayDiv = smartGetElement("searchPostDisplay", HTMLDivElement);
     searchPostDisplayDiv.innerHTML = "";
     if (searchedPosts) {
-        for (const post of searchedPosts) {
+        const postsToDisplay = searchedPosts.slice(postsPerPage * (searchPageNumber - 1), postsPerPage * searchPageNumber);
+        for (const post of postsToDisplay) {
             const imgEle = document.createElement("img");
             imgEle.src = post.thumbnailUrl;
             imgEle.addEventListener("click", function () {
@@ -312,46 +341,6 @@ function resetDisplay() {
     else {
         searchPostDisplayDiv.innerText = `[there are no searched posts]`;
     }
-    //summary display
-    const sumDiv = smartGetElement("summaryDiv", HTMLDivElement);
-    sumDiv.innerHTML = "";
-    for (const post of votedPosts.values()) {
-        const score = votes.get(post.id);
-        const anchorEle = document.createElement("a");
-        anchorEle.href = post.siteUrl;
-        anchorEle.target = "_blank";
-        const imgEle = document.createElement("img");
-        imgEle.src = post.thumbnailUrl;
-        anchorEle.appendChild(imgEle);
-        const spanEle = document.createElement("span");
-        spanEle.textContent = `Score: ${score}`;
-        const plusButton = document.createElement("button");
-        plusButton.innerText = "+1";
-        plusButton.addEventListener("click", function () {
-            votes.set(post.id, score + 1);
-            resetDisplay();
-        });
-        const minusButton = document.createElement("button");
-        minusButton.innerText = "-1";
-        minusButton.addEventListener("click", function () {
-            votes.set(post.id, score - 1);
-            resetDisplay();
-        });
-        const removeButtonEle = document.createElement("button");
-        removeButtonEle.textContent = "Remove";
-        removeButtonEle.addEventListener("click", function () {
-            votedPosts.delete(post.id);
-            votes.delete(post.id);
-            resetDisplay();
-        });
-        const postDiv = document.createElement("div");
-        postDiv.appendChild(anchorEle);
-        postDiv.appendChild(spanEle);
-        postDiv.appendChild(minusButton);
-        postDiv.appendChild(plusButton);
-        postDiv.appendChild(removeButtonEle);
-        sumDiv.appendChild(postDiv);
-    }
 }
 window.onload = function () {
     return __awaiter(this, void 0, void 0, function* () {
@@ -360,23 +349,37 @@ window.onload = function () {
         resetDisplay();
     });
 };
-smartGetElement("voteYesButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () { yield vote(1); });
+smartGetElement("ratePlusOne", HTMLButtonElement).addEventListener("click", function () {
+    return __awaiter(this, void 0, void 0, function* () { yield rate(1); });
 });
-smartGetElement("voteNoButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () { yield vote(-1); });
+smartGetElement("rateZero", HTMLButtonElement).addEventListener("click", function () {
+    return __awaiter(this, void 0, void 0, function* () { yield rate(0); });
 });
-smartGetElement("addPostButton", HTMLButtonElement).addEventListener("click", function () {
-    return __awaiter(this, void 0, void 0, function* () {
-        const id = Number(smartGetElement("addPostIdInput", HTMLInputElement).value);
-        const post = (yield getPosts(`id:${id}`, 1, { lookInCache: false, storeInCache: false }))[0];
-        selectedPost = post;
-        resetDisplay();
-    });
+smartGetElement("rateMinusOne", HTMLButtonElement).addEventListener("click", function () {
+    return __awaiter(this, void 0, void 0, function* () { yield rate(-1); });
 });
 smartGetElement("refreshButton", HTMLButtonElement).addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
+        selectedPost = undefined;
         yield search();
         resetDisplay();
     });
+});
+smartGetElement("searchPrev", HTMLButtonElement).addEventListener("click", function () {
+    if (!searchedPosts) {
+        return;
+    }
+    if (searchPageNumber > 1) {
+        searchPageNumber--;
+        resetDisplay();
+    }
+});
+smartGetElement("searchNext", HTMLButtonElement).addEventListener("click", function () {
+    if (!searchedPosts) {
+        return;
+    }
+    if (searchPageNumber < Math.ceil(searchedPosts.length / postsPerPage)) {
+        searchPageNumber++;
+        resetDisplay();
+    }
 });

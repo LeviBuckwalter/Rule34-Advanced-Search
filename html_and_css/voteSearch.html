@@ -27,11 +27,6 @@
                 <input type="text" id="scopeInput">
             </div>
             <div>
-                <label for="addPostIdInput">Add a post by id</label>
-                <input type="text" id="addPostIdInput">
-                <button id="addPostButton" class="danger-btn">Go</button>
-            </div>
-            <div>
                 <label for="minPostsInput">Minimum posts</label>
                 <input type="text" id="minPostsInput">
             </div>
@@ -47,17 +42,23 @@
         </section>
 
         <section>
-            Vote:
+            Rate Selected Post:
             <div>
-                <button id="voteYesButton" class="danger-btn">Vote yes</button>
-                <button id="voteNoButton" class="danger-btn">Vote no</button>
+                <button id="rateMinusOne">-1</button>
+                <button id="rateZero">0</button>
+                <button id="ratePlusOne">+1</button>
             </div>
         </section>
 
         <section>
-            Selected post:
+            Selected post: <span id="rateSpan"></span>
             <div id="currentImageDiv"></div>
         </section>
+
+        <details>
+            <summary>Rated posts</summary>
+            <div id="summaryDiv"></div>
+        </details>
 
         <section>
             Search prompt:
@@ -66,14 +67,12 @@
 
         <section>
             Search:
+            <div>
+                <button id="searchPrev">Previous page</button>
+                <button id="searchNext">Next page</button>
+            </div>
             <div id="searchPostDisplay"></div>
         </section>
-
-        <div>
-            Summary:
-            <div id="summaryDiv"></div>
-        </div>
-        <div id="summaryDiv"></div>
     </main>
 </body>
 
