@@ -5,7 +5,7 @@ import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_f
 import { Post } from "../R34-Tools/src/classes/Post";
 
 const ratedPosts: Map<number, Post> = new Map() //a map of postIds to posts for all the posts that have been voted on
-const votes: Map<number, number> = new Map() //a map of postIds to scores
+const ratings: Map<number, number> = new Map() //a map of postIds to scores
 let selectedPost: Post | undefined //the post currently being displayed and voted on
 let searchedPosts: Post[] | undefined //the posts that have been scored by the search function (not all of these are neccesarily being displayed)
 let searchPageNumber = 1
@@ -69,10 +69,10 @@ function tagsInCommon(tagSetA: Set<string>, tagSetB: Set<string>): number {
 
 async function rate(rating: number): Promise<void> {
     if (selectedPost) {
-        if (rating === 0 || !votes.has(selectedPost.id)) {
-            votes.set(selectedPost.id, rating)
+        if (rating === 0 || !ratings.has(selectedPost.id)) {
+            ratings.set(selectedPost.id, rating)
         } else {
-            votes.set(selectedPost.id, votes.get(selectedPost.id)! + rating)
+            ratings.set(selectedPost.id, ratings.get(selectedPost.id)! + rating)
         }
 
         ratedPosts.set(selectedPost.id, selectedPost)
@@ -112,7 +112,7 @@ async function search(): Promise<void> {
     const tags: string[] = [] //an array of all tags found in votedPosts
     const tagsToVotes: Map<string, { totalScore: number, amtSamples: number }> = new Map() //a map of every tag with its vote data
     for (const post of ratedPosts.values()) {
-        const vote = votes.get(post.id)!
+        const vote = ratings.get(post.id)!
         for (const tag of post.tags.values()) {
             tags.push(tag)
             //is there already an entry for this tag?
@@ -252,17 +252,17 @@ async function search(): Promise<void> {
     //6 sort posts
     //6.1 generate a score for each post
     const postScores: Map<number, number> = new Map() //mapping postIds to scores
-    for (const postToRate of posts) {
+    for (const postToScore of posts) {
         let score = 0
-        for (const votedPost of ratedPosts.values()) {
-            const vote = votes.get(votedPost.id)!
+        for (const ratedPost of ratedPosts.values()) {
+            const rating = ratings.get(ratedPost.id)!
 
-            const amtCommonTags = tagsInCommon(votedPost.tags, postToRate.tags)
-            const avgAmtTags = (votedPost.tags.size + postToRate.tags.size) / 2
+            const amtCommonTags = tagsInCommon(ratedPost.tags, postToScore.tags)
+            const avgAmtTags = (ratedPost.tags.size + postToScore.tags.size) / 2
 
-            score += Math.pow((amtCommonTags / avgAmtTags) * vote, 2)
+            score += Math.pow((amtCommonTags / avgAmtTags) * rating, 2)
         }
-        postScores.set(postToRate.id, score)
+        postScores.set(postToScore.id, score)
     }
 
     //6.2 sort posts by score
@@ -278,8 +278,8 @@ async function search(): Promise<void> {
 function resetDisplay(): void {
     //rating display
     const rateSpan = smartGetElement("rateSpan", HTMLSpanElement)
-    if (selectedPost && votes.has(selectedPost.id)) {
-        rateSpan.innerText = `rating: ${votes.get(selectedPost.id)}`
+    if (selectedPost && ratings.has(selectedPost.id)) {
+        rateSpan.innerText = `rating: ${ratings.get(selectedPost.id)}`
     } else {
         rateSpan.innerHTML = ""
     }
@@ -326,7 +326,7 @@ function resetDisplay(): void {
         sumDiv.innerText = "[there are no rated posts to display]"
     } else {
         for (const post of ratedPosts.values()) {
-            const score: number = votes.get(post.id)!
+            const score: number = ratings.get(post.id)!
 
             const anchorEle = document.createElement("a")
             anchorEle.href = post.siteUrl
@@ -339,20 +339,20 @@ function resetDisplay(): void {
             const plusButton = document.createElement("button")
             plusButton.innerText = "+1"
             plusButton.addEventListener("click", function () {
-                votes.set(post.id, score + 1)
+                ratings.set(post.id, score + 1)
                 resetDisplay()
             })
             const minusButton = document.createElement("button")
             minusButton.innerText = "-1"
             minusButton.addEventListener("click", function () {
-                votes.set(post.id, score - 1)
+                ratings.set(post.id, score - 1)
                 resetDisplay()
             })
             const removeButtonEle = document.createElement("button")
             removeButtonEle.textContent = "Remove"
             removeButtonEle.addEventListener("click", function () {
                 ratedPosts.delete(post.id)
-                votes.delete(post.id)
+                ratings.delete(post.id)
                 resetDisplay()
             })
             const postDiv = document.createElement("div")
@@ -371,6 +371,8 @@ function resetDisplay(): void {
     const searchPostDisplayDiv = smartGetElement("searchPostDisplay", HTMLDivElement)
     searchPostDisplayDiv.innerHTML = ""
     if (searchedPosts) {
+        const pageNumberSpan = smartGetElement("searchPageNumberDisplaySpan", HTMLSpanElement)
+        pageNumberSpan.innerText = `page ${searchPageNumber} of ${Math.ceil(searchedPosts.length / postsPerPage)}`
         const postsToDisplay = searchedPosts.slice(postsPerPage * (searchPageNumber - 1), postsPerPage * searchPageNumber)
         for (const post of postsToDisplay) {
             const imgEle = document.createElement("img")
@@ -399,6 +401,7 @@ smartGetElement("rateMinusOne", HTMLButtonElement).addEventListener("click", asy
 
 smartGetElement("refreshButton", HTMLButtonElement).addEventListener("click", async function () {
     selectedPost = undefined
+    searchPageNumber = 1
     await search()
     resetDisplay()
 })
