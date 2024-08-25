@@ -143,7 +143,7 @@ function search() {
         const minPostsInput = smartGetElement("minPostsInput", HTMLInputElement);
         const maxPostsInput = smartGetElement("maxPostsInput", HTMLInputElement);
         if (Number(minPostsInput.value) === 0) {
-            minPostsInput.value = `${100}`;
+            minPostsInput.value = `${1000}`;
         }
         if (Number(maxPostsInput.value) < Number(minPostsInput.value)) {
             maxPostsInput.value = `${Number(minPostsInput.value) * 2}`;
