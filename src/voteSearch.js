@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { smartGetElement } from "./functions.js";
+import { pow2, smartGetElement } from "./functions.js";
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
@@ -226,7 +226,7 @@ function search() {
                 const rating = ratings.get(ratedPost.id);
                 const amtCommonTags = tagsInCommon(ratedPost.tags, postToScore.tags);
                 const avgAmtTags = (ratedPost.tags.size + postToScore.tags.size) / 2;
-                score += Math.pow((amtCommonTags / avgAmtTags) * rating, 2);
+                score += pow2((amtCommonTags / avgAmtTags) * rating, 2);
             }
             postScores.set(postToScore.id, score);
         }
