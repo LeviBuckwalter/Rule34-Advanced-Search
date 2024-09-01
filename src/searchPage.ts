@@ -1,9 +1,11 @@
-import { smartGetElement } from "./functions.js"
+import { smartGetElement } from "./functions/generalFunctions.js"
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js"
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { tsToId } from "../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
+import { PostDisplayArray } from "./functions/PostDisplayArray.js";
 
-// window.onload = resetAnchor
+const postDisplayEle = new PostDisplayArray([], smartGetElement("postDisplayDiv", HTMLDivElement), {})
+
 
 async function search() {
     const constraints = smartGetElement("constraints", HTMLInputElement).value + " "
@@ -23,22 +25,12 @@ async function search() {
 
     const prompt = constraints + idConstraints + sort
 
-    smartGetElement("imageSection", HTMLElement).innerHTML = ""
     smartGetElement("promptDisplayDiv", HTMLDivElement).innerHTML = `Now searching the prompt "${prompt}":`
 
-    const posts = (await getPosts(prompt, 100, { lookInCache: false, storeInCache: false }))
+    const posts = (await getPosts(prompt, 10000, { lookInCache: false, storeInCache: false }))
 
-
-    for (const post of posts) {
-        const linkElement = document.createElement("a")
-        linkElement.href = post.siteUrl
-        linkElement.target = "_blank"
-        smartGetElement("imageSection", HTMLElement).appendChild(linkElement)
-
-        const imageElement = document.createElement("img")
-        imageElement.src = post.thumbnailUrl
-        linkElement.appendChild(imageElement)
-    }
+    postDisplayEle.posts = posts
+    postDisplayEle.display()
 }
 
 smartGetElement("searchButton", HTMLButtonElement).addEventListener("click", search)
