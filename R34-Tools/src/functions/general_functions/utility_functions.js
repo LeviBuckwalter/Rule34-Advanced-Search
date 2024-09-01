@@ -26,7 +26,7 @@ export function processRawPosts(rawPosts) {
         for (const tag of tags) {
             tagsSet.add(tag);
         }
-        processed.push(new Post(rawPost.id, tagsSet, rawPost.rating, rawPost.score, rawPost.comment_count, rawPost.preview_url, rawPost.sample_url));
+        processed.push(new Post(rawPost.id, tagsSet, rawPost.rating, rawPost.score, rawPost.comment_count, rawPost.preview_url, rawPost.sample_url, rawPost.file_url));
     }
     return processed;
 }

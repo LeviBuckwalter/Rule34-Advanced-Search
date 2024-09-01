@@ -23,6 +23,7 @@ type rawPost = {
     comment_count: number
     preview_url: string
     sample_url: string
+    file_url: string
 }
 export function processRawPosts(rawPosts: rawPost[]): Post[] {
     function isSafe(tag: string): boolean {
@@ -51,7 +52,8 @@ export function processRawPosts(rawPosts: rawPost[]): Post[] {
             rawPost.score,
             rawPost.comment_count,
             rawPost.preview_url,
-            rawPost.sample_url
+            rawPost.sample_url,
+            rawPost.file_url
         ))
     }
     return processed

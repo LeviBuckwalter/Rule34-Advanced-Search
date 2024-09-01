@@ -1,5 +1,5 @@
 export class Post {
-    constructor(id, tags, rating, score, commentCount, thumbnailUrl, mediumImageUrl) {
+    constructor(id, tags, rating, score, commentCount, thumbnailUrl, mediumImageUrl, fullImageUrl) {
         this.id = id;
         this.tags = tags;
         this.rating = rating;
@@ -7,6 +7,7 @@ export class Post {
         this.commentCount = commentCount;
         this.thumbnailUrl = thumbnailUrl;
         this.mediumImageUrl = mediumImageUrl;
+        this.fullImageUrl = fullImageUrl;
     }
     get siteUrl() {
         return `https://rule34.xxx/index.php?page=post&s=view&id=${this.id}`;

@@ -6,7 +6,8 @@ export class Post {
         public score: number,
         public commentCount: number,
         public thumbnailUrl: string,
-        public mediumImageUrl: string
+        public mediumImageUrl: string,
+        public fullImageUrl: string
     ) { }
 
     get siteUrl(): string {
