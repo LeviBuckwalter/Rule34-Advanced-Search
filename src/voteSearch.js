@@ -7,10 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { pow2, smartGetElement } from "./functions.js";
+import { smartGetElement } from "./functions/generalFunctions.js";
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
 import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
+import { ratePostByPosts } from "./functions/R34ToolsFunctions.js";
 const ratedPosts = new Map(); //a map of postIds to posts for all the posts that have been voted on
 const ratings = new Map(); //a map of postIds to scores
 let selectedPost; //the post currently being displayed and voted on
@@ -208,34 +209,38 @@ function search() {
         }
         promptDisplayDiv.innerText = `Final prompt: "${prompt}", which returns ${yield getCount(prompt, {})} posts.`;
         //4 use prompt to generate posts
-        let posts = yield getPosts(prompt, maxPosts, {});
+        let generatedPosts = yield getPosts(prompt, maxPosts, {});
         //5 remove posts already voted on
         const goodPosts = [];
-        for (const post of posts) {
+        for (const post of generatedPosts) {
             if (!ratedPosts.has(post.id)) {
                 goodPosts.push(post);
             }
         }
-        posts = goodPosts;
+        generatedPosts = goodPosts;
         //6 sort posts
-        //6.1 generate a score for each post
-        const postScores = new Map(); //mapping postIds to scores
-        for (const postToScore of posts) {
-            let score = 0;
-            for (const ratedPost of ratedPosts.values()) {
-                const rating = ratings.get(ratedPost.id);
-                const amtCommonTags = tagsInCommon(ratedPost.tags, postToScore.tags);
-                const avgAmtTags = (ratedPost.tags.size + postToScore.tags.size) / 2;
-                score += pow2((amtCommonTags / avgAmtTags) * rating, 2);
-            }
-            postScores.set(postToScore.id, score);
+        //6.1  generate a postsToRateBy for ratePostByPosts to use
+        const postsToRateBy = [];
+        for (const entry of ratings.entries()) {
+            const rating = entry[1];
+            const postId = entry[0];
+            const post = ratedPosts.get(postId);
+            postsToRateBy.push({
+                post: post,
+                score: rating
+            });
         }
-        //6.2 sort posts by score
-        posts.sort(function (a, b) {
+        //6.2 generate a score for each post
+        const postScores = new Map(); //mapping postIds to scores
+        for (const postToScore of generatedPosts) {
+            postScores.set(postToScore.id, ratePostByPosts(postToScore, postsToRateBy));
+        }
+        //6.3 sort posts by score
+        generatedPosts.sort(function (a, b) {
             return postScores.get(b.id) - postScores.get(a.id);
         });
         //7 set searchedPosts to sorted posts
-        searchedPosts = posts;
+        searchedPosts = generatedPosts;
     });
 }
 function resetDisplay() {
@@ -278,7 +283,7 @@ function resetDisplay() {
         imageDiv.innerHTML = "";
         imageDiv.innerText = `[currently no post is selected]`;
     }
-    //summary display
+    //rated posts display
     const sumDiv = smartGetElement("summaryDiv", HTMLDivElement);
     sumDiv.innerHTML = "";
     if (ratedPosts.size === 0) {
@@ -323,6 +328,8 @@ function resetDisplay() {
             sumDiv.appendChild(postDiv);
         }
     }
+    //tags of rated posts display
+    const tagsOfRatedPostsDiv = smartGetElement("tagsOfRatedPostsDiv", HTMLDivElement);
     //search display
     const searchPostDisplayDiv = smartGetElement("searchPostDisplay", HTMLDivElement);
     searchPostDisplayDiv.innerHTML = "";
