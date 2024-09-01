@@ -1,4 +1,4 @@
-import { smartGetElement } from "./functions.js";
+import { smartGetElement } from "./functions/generalFunctions.js";
 import { ratePost } from "../R34-Tools/src/testing/rate_post.js"
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js"
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";

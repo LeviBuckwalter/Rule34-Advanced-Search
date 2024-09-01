@@ -1,6 +1,6 @@
 import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js"
 import { Census } from "../R34-Tools/src/classes/Census.js"
-import { smartGetElement } from "./functions.js"
+import { smartGetElement } from "./functions/generalFunctions.js"
 import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js"
 
 window.onload = resetAnchor
