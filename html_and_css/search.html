@@ -7,41 +7,44 @@
 </head>
 
 <body>
-    <h1>Search</h1>
-    <div>
-        <a href="../index.html">Home Page</a>
-    </div>
+    <main>
+        <h1>Search</h1>
+        <div>
+            <a href="../index.html">Home Page</a>
+        </div>
 
-    <section>
-        <div>
-            <label for="constraints">Constraints</label>
-            <input type="text" id="constraints">
-        </div>
-        <div>
-            <label for="sortInput">Sort</label>
-            <select id="sortInput">
-                <option>sort:id:desc</option>
-                <option>sort:id:asc</option>
-                <option>sort:score:desc</option>
-                <option>sort:score:asc</option>
-                <option>sort:updated:desc</option>
-                <option>sort:updated:asc</option>
+        <section>
+            <div>
+                <label for="constraints">Constraints</label>
+                <input type="text" id="constraints">
+            </div>
+            <div>
+                <label for="sortInput">Sort</label>
+                <select id="sortInput">
+                    <option>sort:id:desc</option>
+                    <option>sort:id:asc</option>
+                    <option>sort:score:desc</option>
+                    <option>sort:score:asc</option>
+                    <option>sort:updated:desc</option>
+                    <option>sort:updated:asc</option>
 
-            </select>
-        </div>
+                </select>
+            </div>
+            <div>
+                <label for="timeInputEarliest">Posts after:</label>
+                <input type="date" id="timeInputEarliest">
+                <label for="timeInputLatest">Posts before:</label>
+                <input type="date" id="timeInputLatest">
+            </div>
+        </section>
         <div>
-            <label for="timeInputEarliest">Posts after:</label>
-            <input type="date" id="timeInputEarliest">
-            <label for="timeInputLatest">Posts before:</label>
-            <input type="date" id="timeInputLatest">
+            <button id="searchButton" class="danger-btn">Search</button>
         </div>
-    </section>
-    <div>
-        <button id="searchButton" class="danger-btn">Search</button>
-    </div>
-    <div id="promptDisplayDiv"></div>
-    <section id="imageSection">
-    </section>
+        <div id="promptDisplayDiv"></div>
+        <section>
+            <div id="postDisplayDiv"></div>
+        </section>
+    </main>
 </body>
 
 
