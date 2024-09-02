@@ -7,11 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { smartGetElement } from "./functions/generalFunctions.js";
-import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js";
-import { getCount } from "../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
-import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
-import { ratePostByPosts } from "./functions/R34ToolsFunctions.js";
+import { smartGetElement } from "../../functions/generalFunctions.js";
+import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+import { getCount } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
+import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
+import { ratePostByPosts } from "../../functions/R34ToolsFunctions.js";
 const ratedPosts = new Map(); //a map of postIds to posts for all the posts that have been voted on
 const ratings = new Map(); //a map of postIds to scores
 let selectedPost; //the post currently being displayed and voted on

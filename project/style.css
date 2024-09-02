@@ -21,8 +21,6 @@ body {
     background: rgb(16, 130, 0);
     background: linear-gradient(48deg, rgba(16, 130, 0, 1) 0%, rgba(255, 241, 0, 1) 100%);
     background-attachment: fixed;
-    display: grid;
-    grid-template-columns: 1fr 800px 1fr;
     width: 100%;
     background-size: cover;
     /* Ensure the gradient covers the entire element */
@@ -31,7 +29,13 @@ body {
 }
 
 main {
-    grid-column: 2 / 3;
+    display: grid;
+    grid-template-columns:
+        [gutter-left-outside] 1fr [gutter-left-inside] 2fr [content-left] 800px [content-right] 2fr [gutter-right-inside] 1fr [gutter-right-outside];
+}
+
+main>* {
+    grid-column: content-left / content-right;
 }
 
 section {
@@ -78,4 +82,16 @@ a {
 
 a:hover {
     text-decoration: solid underline;
+}
+
+.wide-content,
+section:has(#postDisplayDiv) {
+    grid-column: gutter-left-inside / gutter-right-inside;
+}
+
+section {
+    padding: 1rem;
+    border: 1px solid rgb(255, 255, 255);
+    border-radius: 4px;
+    background-color: rgba(100% 100% 100% / 0.25);
 }

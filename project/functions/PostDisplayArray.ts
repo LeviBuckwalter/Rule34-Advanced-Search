@@ -27,8 +27,6 @@ export class PostDisplayArray {
     public display() {
         this.divEle.replaceChildren()//clears children
 
-        console.log(this.maxPages, this.currentPage)
-
         //next and previous page buttons: top
         const passableThis = this
         const buttonsDivTop = document.createElement("div")

@@ -1,0 +1,43 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Advanced Search</title>
+</head>
+
+<body>
+    <main>
+        <h1>Advanced Search</h1>
+        <div>
+            <a href="../../../index.html">Home Page</a>
+        </div>
+        <section>
+            <details>
+                <summary>Options</summary>
+            </details>
+            <div>
+                <label for="literalSearch">Literal search</label>
+                <input type="text" id="literalSearch">
+            </div>
+            <div>
+                <label for="sortFor">Sort by</label>
+                <input type="text" id="sortFor">
+            </div>
+            <div>
+                <label for="sortAgainst">as opposed to</label>
+                <input type="text" id="sortAgainst">
+            </div>
+            <div>
+                <button id="searchButton" class="danger-btn">Search</button>
+            </div>
+        </section>
+        <section class="wide-content">
+            <span id="postDisplay"></span>
+        </section>
+    </main>
+</body>
+
+<script type="module" async="true" src="./advancedSearch.js"></script>
+
+</html>

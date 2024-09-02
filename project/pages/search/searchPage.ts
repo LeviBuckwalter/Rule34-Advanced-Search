@@ -1,10 +1,9 @@
-import { smartGetElement } from "./functions/generalFunctions.js"
-import { getPosts } from "../R34-Tools/src/functions/general_functions/end_user.js"
-import { resetAnchor } from "../R34-Tools/src/caches/post_caching/post_caching_functions.js";
-import { tsToId } from "../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
-import { PostDisplayArray } from "./functions/PostDisplayArray.js";
+import { smartGetElement } from "../../functions/generalFunctions.js"
+import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js"
+import { tsToId } from "../../../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
+import { PostDisplayArray } from "../../functions/PostDisplayArray.js";
 
-const postDisplayEle = new PostDisplayArray([], smartGetElement("postDisplayDiv", HTMLDivElement), {})
+const postDisplayArrayEle = new PostDisplayArray([], smartGetElement("postDisplayDiv", HTMLDivElement), {})
 
 
 async function search() {
@@ -29,8 +28,8 @@ async function search() {
 
     const posts = (await getPosts(prompt, 10000, { lookInCache: false, storeInCache: false }))
 
-    postDisplayEle.posts = posts
-    postDisplayEle.display()
+    postDisplayArrayEle.posts = posts
+    postDisplayArrayEle.display()
 }
 
 smartGetElement("searchButton", HTMLButtonElement).addEventListener("click", search)
