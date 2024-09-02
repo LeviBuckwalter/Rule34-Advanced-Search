@@ -24,7 +24,7 @@ window.onload = function () {
 };
 searchButtonEle.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
-        const searchedPosts = getPosts(literalSearchEle.value, 30000, {});
+        const searchedPosts = getPosts(literalSearchEle.value, 20000, {});
         const postsFor = getPosts(sortForEle.value, 10000, {});
         const postsAgainst = getPosts(sortAgainsetEle.value, 10000, {});
         const censusFor = new Census(yield postsFor);
@@ -47,10 +47,12 @@ searchButtonEle.addEventListener("click", function () {
         // }
         const ratedPosts = [];
         for (const post of (yield searchedPosts)) {
-            let rating = 0;
+            let rating = 1;
             for (const tag of post.tags.values()) {
-                rating += (censusFor.count(tag) + 1) / (censusAgainst.count(tag) + 1);
+                rating *= (censusFor.count(tag) + 1) / (censusAgainst.count(tag) + 1);
             }
+            // rating = rating / post.tags.size
+            rating = Math.pow(rating, 1 / post.tags.size);
             ratedPosts.push({
                 post: post,
                 rating: rating
