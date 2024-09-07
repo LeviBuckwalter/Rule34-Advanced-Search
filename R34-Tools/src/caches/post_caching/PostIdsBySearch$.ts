@@ -10,7 +10,7 @@ This cache's size is unlimited, because I'm assuming the PostsByPostIds cache wi
 */
 
 type postId = number
-export const PostIdsBySearch$: Cache<postId[]> = new Cache("PostIdsBySearch$", Infinity)
+export const PostIdsBySearch$: Cache<postId[]> = new Cache(Infinity)
 PostIdsBySearch$.makeKey = function (prompt: string, pid: number): string {
     // const Gen$Ret = General$.retrieve("maxId")
     // if (!Gen$Ret) {

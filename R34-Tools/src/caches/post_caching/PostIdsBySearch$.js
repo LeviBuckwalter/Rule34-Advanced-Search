@@ -1,7 +1,7 @@
 import { Cache } from "../../../Cache/src/classes/Cache.js";
 import { normalizePrompt } from "../../functions/general_functions/utility_functions.js";
 import { PostsByPostId$ } from "./PostsByPostId$.js";
-export const PostIdsBySearch$ = new Cache("PostIdsBySearch$", Infinity);
+export const PostIdsBySearch$ = new Cache(Infinity);
 PostIdsBySearch$.makeKey = function (prompt, pid) {
     // const Gen$Ret = General$.retrieve("maxId")
     // if (!Gen$Ret) {
