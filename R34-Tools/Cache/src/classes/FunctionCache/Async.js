@@ -1,30 +1,23 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import { Cache } from "../Cache.js";
+/*
+9/7/24
+Okay, I want to make a change to this. I think I want the async function cache to store promises. Because I think I'm running into a problem, where I'm initiation a huge amount of calls to a function cache at once, and they are each and every one of them saying "is the resolved answer already in the async function cache?" And since they're all initiated in a very short time span, none of them see the resolved answer. What they should instead ask is "Is there already someone who asked the same question as me? If so, I'll go stand next to them and wait for the answer to their question."
+*/
 export class AsyncFunctionCache {
-    constructor(func, name, maxEntries, shelfLife) {
+    constructor(func, maxEntries, shelfLife) {
         this.func = func;
-        this.cache = new Cache(name, maxEntries);
+        this.cache = new Cache(maxEntries);
         this.shelfLife = shelfLife;
     }
     call(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const key = JSON.stringify(params);
-            const cacheResult = this.cache.retrieve(key);
-            if (cacheResult) {
-                return cacheResult;
-            }
-            //else:
-            const funcResult = yield this.func(...params);
-            this.cache.store(key, funcResult, this.shelfLife);
-            return funcResult;
-        });
+        const key = JSON.stringify(params);
+        const cacheResult = this.cache.retrieve(key);
+        if (cacheResult) {
+            return cacheResult;
+        }
+        //else:
+        const promiseOfFuncResult = this.func(...params);
+        this.cache.store(key, promiseOfFuncResult, this.shelfLife);
+        return promiseOfFuncResult;
     }
 }
