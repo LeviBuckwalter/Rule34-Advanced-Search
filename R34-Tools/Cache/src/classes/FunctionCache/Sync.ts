@@ -8,12 +8,11 @@ export class SyncFunctionCache<F extends (...args: any) => any> {
 
     constructor(
         func: F,
-        name: string,
         maxEntries: number,
         shelfLife: number | undefined
     ) {
         this.func = func
-        this.cache = new Cache(name, maxEntries)
+        this.cache = new Cache(maxEntries)
         this.shelfLife = shelfLife
     }
 

@@ -9,9 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { Cache } from "../Cache.js";
 export class SyncFunctionCache {
-    constructor(func, name, maxEntries, shelfLife) {
+    constructor(func, maxEntries, shelfLife) {
         this.func = func;
-        this.cache = new Cache(name, maxEntries);
+        this.cache = new Cache(maxEntries);
         this.shelfLife = shelfLife;
     }
     call(...params) {
