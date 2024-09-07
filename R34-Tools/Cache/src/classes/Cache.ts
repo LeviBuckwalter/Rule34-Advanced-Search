@@ -1,11 +1,14 @@
 import { Entry } from "./Entry.js";
 import { params } from "../parameters.js";
 
+/*
+When calling store, know that shelflife is measured in hours
+*/
+
 
 export class Cache<T> {
     parameters: {
-        name: string
-        maxEntries: number //in MBs
+        maxEntries: number
     }
     metadata: {
         ledger: Set<string>[],
@@ -13,9 +16,8 @@ export class Cache<T> {
     }
     entries: { [key: string]: Entry<T> }
 
-    constructor(name: string, maxEntries: number) {
+    constructor(maxEntries: number) {
         this.parameters = {
-            name,
             maxEntries,
         }
         this.metadata = {
@@ -25,14 +27,19 @@ export class Cache<T> {
         this.entries = {}
     }
 
-    public makeKey(...params: any): any {}
+    public makeKey(...params: any): any { }
 
-    store(key: string, contents: T, shelfLife?: number): void {
+    store(key: string, contents: T, shelfLife?: number/*measured in hours*/): void {
         if (key in this.entries) {
             this.discard(key)
         }
-        
-        const expireTS = (shelfLife) ? Date.now() + shelfLife : null
+
+
+        let expireTS = null
+        if (shelfLife) {
+            //enterpret shelflife as a measure of hours
+            expireTS = Date.now() + shelfLife * 60 * 60 * 1000
+        }
         const entry = new Entry<T>(contents, expireTS)
         this.entries[key] = entry
         this.addToLedger(key)
@@ -65,7 +72,7 @@ export class Cache<T> {
     discard(key: string): void {
         //is there an entry under this key?
         if (!(key in this.entries)) {
-            console.error(`was asked to discard the entry under "${key}" from the cache named "${this.parameters.name}", but no such entry exists`)
+            console.error(`was asked to discard the entry under "${key}", but no such entry exists`)
             return
         }
 
@@ -112,7 +119,7 @@ export class Cache<T> {
         function tooBig(): boolean {
             return mData.amtEntries > maxEntries //size is given in MBs
         }
-        if (!tooBig()) {return}
+        if (!tooBig()) { return }
         for (const ledgerSet of ledger) {
             for (const key of ledgerSet.values()) {
                 this.discard(key)

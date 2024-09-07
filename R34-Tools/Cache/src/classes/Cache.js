@@ -1,9 +1,11 @@
 import { Entry } from "./Entry.js";
 import { params } from "../parameters.js";
+/*
+When calling store, know that shelflife is measured in hours
+*/
 export class Cache {
-    constructor(name, maxEntries) {
+    constructor(maxEntries) {
         this.parameters = {
-            name,
             maxEntries,
         };
         this.metadata = {
@@ -13,11 +15,15 @@ export class Cache {
         this.entries = {};
     }
     makeKey(...params) { }
-    store(key, contents, shelfLife) {
+    store(key, contents, shelfLife /*measured in hours*/) {
         if (key in this.entries) {
             this.discard(key);
         }
-        const expireTS = (shelfLife) ? Date.now() + shelfLife : null;
+        let expireTS = null;
+        if (shelfLife) {
+            //enterpret shelflife as a measure of hours
+            expireTS = Date.now() + shelfLife * 60 * 60 * 1000;
+        }
         const entry = new Entry(contents, expireTS);
         this.entries[key] = entry;
         this.addToLedger(key);
@@ -46,7 +52,7 @@ export class Cache {
     discard(key) {
         //is there an entry under this key?
         if (!(key in this.entries)) {
-            console.error(`was asked to discard the entry under "${key}" from the cache named "${this.parameters.name}", but no such entry exists`);
+            console.error(`was asked to discard the entry under "${key}", but no such entry exists`);
             return;
         }
         this.metadata.amtEntries--;
