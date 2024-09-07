@@ -20,7 +20,13 @@ window.onload = function () {
 };
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement);
 const sortForEle = smartGetElement("sortFor", HTMLInputElement);
-const sortAgainsetEle = smartGetElement("sortAgainst", HTMLInputElement);
+sortForEle.addEventListener("input", function () {
+    rateTagF$.cache.clear();
+});
+const sortAgainstEle = smartGetElement("sortAgainst", HTMLInputElement);
+sortAgainstEle.addEventListener("input", function () {
+    rateTagF$.cache.clear();
+});
 const statusDisplayEle = smartGetElement("statusDiv", HTMLDivElement);
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {});
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement);
@@ -77,7 +83,7 @@ function search(amtPosts) {
     return __awaiter(this, void 0, void 0, function* () {
         const searchedPosts = yield getPosts(literalSearchEle.value, amtPosts, {});
         const promptFor = sortForEle.value;
-        const promptAgainst = sortAgainsetEle.value;
+        const promptAgainst = sortAgainstEle.value;
         const postRatingPromises = []; //an array in the same order as searchedPosts
         for (const post of searchedPosts) {
             postRatingPromises.push(ratePost(post, promptFor, promptAgainst));

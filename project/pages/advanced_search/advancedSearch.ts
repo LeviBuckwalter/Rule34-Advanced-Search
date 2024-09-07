@@ -13,7 +13,13 @@ window.onload = async function () {
 
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement)
 const sortForEle = smartGetElement("sortFor", HTMLInputElement)
-const sortAgainsetEle = smartGetElement("sortAgainst", HTMLInputElement)
+sortForEle.addEventListener("input", function () {
+    rateTagF$.cache.clear()
+})
+const sortAgainstEle = smartGetElement("sortAgainst", HTMLInputElement)
+sortAgainstEle.addEventListener("input", function () {
+    rateTagF$.cache.clear()
+})
 const statusDisplayEle = smartGetElement("statusDiv", HTMLDivElement)
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {})
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement)
@@ -78,7 +84,7 @@ async function ratePost(p: Post, promptFor: string, promptAgainst: string): Prom
 async function search(amtPosts: number) {
     const searchedPosts = await getPosts(literalSearchEle.value, amtPosts, {})
     const promptFor = sortForEle.value
-    const promptAgainst = sortAgainsetEle.value
+    const promptAgainst = sortAgainstEle.value
 
 
     const postRatingPromises: Promise<number>[] = [] //an array in the same order as searchedPosts
