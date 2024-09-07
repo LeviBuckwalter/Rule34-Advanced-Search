@@ -38,9 +38,19 @@ export function getPosts(prompt, amtPosts, options) {
 // }
 export function getProportion(promptSubgroup_1, promptBaseline_1) {
     return __awaiter(this, arguments, void 0, function* (promptSubgroup, promptBaseline, options = {}) {
-        const { lookInCache = true, storeInCache = true } = options;
-        const countBl = getCount(promptBaseline, { lookInCache, storeInCache });
-        const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, { lookInCache, storeInCache });
+        /*
+        Gets the proportion of posts defined by promptBaseline that also fit promptSubgroup.
+        So, like, if promptBaseline is "feet", and promptSubgroup is "green_eyes", this would answer the question "what proportion of foot posts are tagged green eyes".
+        */
+        const { lookInCacheSubgroup = true, storeInCacheSubgroup = true, lookInCacheBaseline = true, storeInCacheBaseline = true } = options;
+        const countBl = getCount(promptBaseline, {
+            lookInCache: lookInCacheBaseline,
+            storeInCache: storeInCacheBaseline
+        });
+        const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, {
+            lookInCache: lookInCacheSubgroup,
+            storeInCache: storeInCacheSubgroup
+        });
         return {
             proportion: (yield countSg) / (yield countBl),
             datapoints: yield countBl

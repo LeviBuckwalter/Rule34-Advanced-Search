@@ -41,12 +41,33 @@ export async function getPosts(
 export async function getProportion(
     promptSubgroup: string,
     promptBaseline: string,
-    options: { lookInCache?: boolean, storeInCache?: boolean } = {}
+    options: {
+        lookInCacheSubgroup?: boolean,
+        storeInCacheSubgroup?: boolean,
+        lookInCacheBaseline?: boolean,
+        storeInCacheBaseline?: boolean
+    } = {}
 ): Promise<{ proportion: number, datapoints: number }> {
-    const { lookInCache = true, storeInCache = true } = options
+    /*
+    Gets the proportion of posts defined by promptBaseline that also fit promptSubgroup.
+    So, like, if promptBaseline is "feet", and promptSubgroup is "green_eyes", this would answer the question "what proportion of foot posts are tagged green eyes".
+    */
 
-    const countBl = getCount(promptBaseline, { lookInCache, storeInCache })
-    const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, { lookInCache, storeInCache })
+    const {
+        lookInCacheSubgroup = true,
+        storeInCacheSubgroup = true,
+        lookInCacheBaseline = true,
+        storeInCacheBaseline = true
+    } = options
+
+    const countBl = getCount(promptBaseline, {
+        lookInCache: lookInCacheBaseline,
+        storeInCache: storeInCacheBaseline
+    })
+    const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, {
+        lookInCache: lookInCacheSubgroup,
+        storeInCache: storeInCacheSubgroup
+    })
     return {
         proportion: (await countSg) / (await countBl),
         datapoints: await countBl
