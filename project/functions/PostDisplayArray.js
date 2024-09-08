@@ -12,28 +12,35 @@ export class PostDisplayArray {
     }
     display() {
         this.divEle.replaceChildren(); //clears children
-        //next and previous page buttons: top
         const passableThis = this;
-        const buttonsDivTop = document.createElement("div");
-        this.divEle.appendChild(buttonsDivTop);
-        if (this.currentPage > 1) {
-            const pageBackward = document.createElement("button");
-            pageBackward.innerText = "Previous Page";
-            pageBackward.addEventListener("click", function () {
+        const topOfPDADiv = document.createElement("div"); //a div element which will sit at the top of the post display array
+        this.divEle.appendChild(topOfPDADiv);
+        //previous page button top
+        const pageBackwardButtonTop = document.createElement("button");
+        pageBackwardButtonTop.innerText = "Previous Page";
+        pageBackwardButtonTop.addEventListener("click", function () {
+            if (passableThis.currentPage > 1) {
                 passableThis.currentPage--;
                 passableThis.display();
-            });
-            buttonsDivTop.appendChild(pageBackward);
-        }
-        if (this.currentPage < this.maxPages) {
-            const pageForwardButton = document.createElement("button");
-            pageForwardButton.innerText = "Next Page";
-            pageForwardButton.addEventListener("click", function () {
+            }
+        });
+        topOfPDADiv.appendChild(pageBackwardButtonTop);
+        //next page button top
+        const pageForwardButtonTop = document.createElement("button");
+        pageForwardButtonTop.innerText = "Next Page";
+        pageForwardButtonTop.addEventListener("click", function () {
+            if (passableThis.currentPage < passableThis.maxPages) {
                 passableThis.currentPage++;
                 passableThis.display();
-            });
-            buttonsDivTop.appendChild(pageForwardButton);
-        }
+            }
+        });
+        topOfPDADiv.appendChild(pageForwardButtonTop);
+        //page numbers span top
+        const pageNumSpanTop = document.createElement("span");
+        const firstPostNumber = (this.currentPage - 1) * this.postsPerPage + 1;
+        const lastPostNumber = Math.min(this.posts.length, this.currentPage * this.postsPerPage);
+        pageNumSpanTop.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`;
+        topOfPDADiv.appendChild(pageNumSpanTop);
         //post displays
         const startIndex = (this.currentPage - 1) * this.postsPerPage; //inclusive
         const endIndex = this.currentPage * this.postsPerPage; //exclusive
@@ -41,26 +48,31 @@ export class PostDisplayArray {
         for (const post of postsToDisplay) {
             const pd = new PostDisplay(post, this.divEle);
         }
-        //next and previous page buttons: bottom
-        const buttonsDivBottom = document.createElement("div");
-        this.divEle.appendChild(buttonsDivBottom);
-        if (this.currentPage > 1) {
-            const pageBackward = document.createElement("button");
-            pageBackward.innerText = "Previous Page";
-            pageBackward.addEventListener("click", function () {
+        const bottomOfPDADiv = document.createElement("div");
+        this.divEle.appendChild(bottomOfPDADiv);
+        //previous page button bottom
+        const pageBackwardButtonBottom = document.createElement("button");
+        pageBackwardButtonBottom.innerText = "Previous Page";
+        pageBackwardButtonBottom.addEventListener("click", function () {
+            if (passableThis.currentPage > 1) {
                 passableThis.currentPage--;
                 passableThis.display();
-            });
-            buttonsDivBottom.appendChild(pageBackward);
-        }
-        if (this.currentPage < this.maxPages) {
-            const pageForwardButton = document.createElement("button");
-            pageForwardButton.innerText = "Next Page";
-            pageForwardButton.addEventListener("click", function () {
+            }
+        });
+        bottomOfPDADiv.appendChild(pageBackwardButtonBottom);
+        //next page button bottom
+        const pageForwardButtonBottom = document.createElement("button");
+        pageForwardButtonBottom.innerText = "Next Page";
+        pageForwardButtonBottom.addEventListener("click", function () {
+            if (passableThis.currentPage < passableThis.maxPages) {
                 passableThis.currentPage++;
                 passableThis.display();
-            });
-            buttonsDivBottom.appendChild(pageForwardButton);
-        }
+            }
+        });
+        bottomOfPDADiv.appendChild(pageForwardButtonBottom);
+        //page numbers span bottom
+        const pageNumSpanBottom = document.createElement("span");
+        pageNumSpanTop.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`;
+        bottomOfPDADiv.appendChild(pageNumSpanTop);
     }
 }
