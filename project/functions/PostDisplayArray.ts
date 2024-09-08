@@ -103,7 +103,7 @@ export class PostDisplayArray {
 
         //page numbers span bottom
         const pageNumSpanBottom = document.createElement("span")
-        pageNumSpanTop.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`
-        bottomOfPDADiv.appendChild(pageNumSpanTop)
+        pageNumSpanBottom.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`
+        bottomOfPDADiv.appendChild(pageNumSpanBottom)
     }
 }
