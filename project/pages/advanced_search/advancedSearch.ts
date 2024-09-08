@@ -37,6 +37,7 @@ searchButtonEle.addEventListener("click", async function () {
 })
 const stopSearchButtonEle = smartGetElement("stopSearchButton", HTMLButtonElement)
 stopSearchButtonEle.addEventListener("click", function () {
+    statusDisplayEle.innerText = `Okay I'm stopping, just let me finish this...`
     searchNeedsStopped = true
 })
 
