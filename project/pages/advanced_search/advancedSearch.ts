@@ -2,7 +2,7 @@ import { AsyncFunctionCache } from "../../../R34-Tools/Cache/src/classes/Functio
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { getCount } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
 import { Post } from "../../../R34-Tools/src/classes/Post.js";
-import { getPosts, getProportion } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { PostDisplayArray } from "../../functions/PostDisplayArray.js";
 import { smartGetElement } from "../../functions/generalFunctions.js";
 
@@ -13,13 +13,7 @@ window.onload = async function () {
 
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement)
 const sortForEle = smartGetElement("sortFor", HTMLInputElement)
-sortForEle.addEventListener("input", function () {
-    rateTagF$.cache.clear()
-})
 const sortAgainstEle = smartGetElement("sortAgainst", HTMLInputElement)
-sortAgainstEle.addEventListener("input", function () {
-    rateTagF$.cache.clear()
-})
 const statusDisplayEle = smartGetElement("statusDiv", HTMLDivElement)
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {})
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement)
@@ -27,7 +21,7 @@ searchButtonEle.addEventListener("click", async function () {
     const literalSearchCount = await getCount(literalSearchEle.value, {})
 
     let amtPosts = 1
-    while (amtPosts < Math.min(50000, literalSearchCount) && !searchNeedsStopped) {
+    while (amtPosts < Math.min(50000, literalSearchCount * 2) && !searchNeedsStopped) {
         statusDisplayEle.innerText = `Redoing search with ${amtPosts} posts...`
         await search(amtPosts)
         amtPosts *= 2
@@ -43,22 +37,27 @@ stopSearchButtonEle.addEventListener("click", function () {
 
 
 
-
 let searchNeedsStopped = false
 
 async function rateTag(t: string, promptFor: string, promptAgainst: string): Promise<number> {
-    const propForPromise = getProportion(t, promptFor, {
-        lookInCacheSubgroup: false,
-        storeInCacheSubgroup: false
-    })
-    const propAgainstPromise = getProportion(t, promptAgainst, {
-        lookInCacheSubgroup: false,
-        storeInCacheSubgroup: false
-    })
+    // const propForPromise = getProportion(t, promptFor, {
+    //     lookInCacheSubgroup: false,
+    //     storeInCacheSubgroup: false
+    // })
+    // const propAgainstPromise = getProportion(t, promptAgainst, {
+    //     lookInCacheSubgroup: false,
+    //     storeInCacheSubgroup: false
+    // })
 
-    const [propFor, propAgainst] = await Promise.all([propForPromise, propAgainstPromise])
+    const countOfTInPromptFor = getCount(`${t} ${promptFor}`, { lookInCache: false, storeInCache: false })
+    const countOfPromptFor = getCount(promptFor, {})//use cache for this
+    const countOfTInPromptAgainst = getCount(`${t} ${promptAgainst}`, { lookInCache: false, storeInCache: false })
+    const countOfPromptAgainst = getCount(promptAgainst, {})//use cache for this
 
-    const ret = ((propFor).proportion + 1) / ((propAgainst).proportion + 1)
+    const proportionFor = (await countOfTInPromptFor + 1) / (await countOfPromptFor + 2)
+    const proportionAgainst = (await countOfTInPromptAgainst + 1) / (await countOfPromptAgainst + 2)
+
+    const ret = proportionFor / proportionAgainst
 
     console.log(`just rated the tag ${t} as ${ret}`)
 

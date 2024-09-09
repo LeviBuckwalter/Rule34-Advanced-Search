@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { AsyncFunctionCache } from "../../../R34-Tools/Cache/src/classes/FunctionCache/Async.js";
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { getCount } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
-import { getPosts, getProportion } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { PostDisplayArray } from "../../functions/PostDisplayArray.js";
 import { smartGetElement } from "../../functions/generalFunctions.js";
 window.onload = function () {
@@ -20,13 +20,7 @@ window.onload = function () {
 };
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement);
 const sortForEle = smartGetElement("sortFor", HTMLInputElement);
-sortForEle.addEventListener("input", function () {
-    rateTagF$.cache.clear();
-});
 const sortAgainstEle = smartGetElement("sortAgainst", HTMLInputElement);
-sortAgainstEle.addEventListener("input", function () {
-    rateTagF$.cache.clear();
-});
 const statusDisplayEle = smartGetElement("statusDiv", HTMLDivElement);
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {});
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement);
@@ -34,7 +28,7 @@ searchButtonEle.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
         const literalSearchCount = yield getCount(literalSearchEle.value, {});
         let amtPosts = 1;
-        while (amtPosts < Math.min(50000, literalSearchCount) && !searchNeedsStopped) {
+        while (amtPosts < Math.min(50000, literalSearchCount * 2) && !searchNeedsStopped) {
             statusDisplayEle.innerText = `Redoing search with ${amtPosts} posts...`;
             yield search(amtPosts);
             amtPosts *= 2;
@@ -51,16 +45,21 @@ stopSearchButtonEle.addEventListener("click", function () {
 let searchNeedsStopped = false;
 function rateTag(t, promptFor, promptAgainst) {
     return __awaiter(this, void 0, void 0, function* () {
-        const propForPromise = getProportion(t, promptFor, {
-            lookInCacheSubgroup: false,
-            storeInCacheSubgroup: false
-        });
-        const propAgainstPromise = getProportion(t, promptAgainst, {
-            lookInCacheSubgroup: false,
-            storeInCacheSubgroup: false
-        });
-        const [propFor, propAgainst] = yield Promise.all([propForPromise, propAgainstPromise]);
-        const ret = ((propFor).proportion + 1) / ((propAgainst).proportion + 1);
+        // const propForPromise = getProportion(t, promptFor, {
+        //     lookInCacheSubgroup: false,
+        //     storeInCacheSubgroup: false
+        // })
+        // const propAgainstPromise = getProportion(t, promptAgainst, {
+        //     lookInCacheSubgroup: false,
+        //     storeInCacheSubgroup: false
+        // })
+        const countOfTInPromptFor = getCount(`${t} ${promptFor}`, { lookInCache: false, storeInCache: false });
+        const countOfPromptFor = getCount(promptFor, {}); //use cache for this
+        const countOfTInPromptAgainst = getCount(`${t} ${promptAgainst}`, { lookInCache: false, storeInCache: false });
+        const countOfPromptAgainst = getCount(promptAgainst, {}); //use cache for this
+        const proportionFor = ((yield countOfTInPromptFor) + 1) / ((yield countOfPromptFor) + 2);
+        const proportionAgainst = ((yield countOfTInPromptAgainst) + 1) / ((yield countOfPromptAgainst) + 2);
+        const ret = proportionFor / proportionAgainst;
         console.log(`just rated the tag ${t} as ${ret}`);
         return ret;
     });
