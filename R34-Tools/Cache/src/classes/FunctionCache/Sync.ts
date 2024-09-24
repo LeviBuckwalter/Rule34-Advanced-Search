@@ -16,7 +16,7 @@ export class SyncFunctionCache<F extends (...args: any) => any> {
         this.shelfLife = shelfLife
     }
 
-    public async call(...params: Parameters<F>): Promise<ReturnType<F>> {
+    public call(...params: Parameters<F>): ReturnType<F> {
         const key: string = JSON.stringify(params)
 
         const cacheResult = this.cache.retrieve(key)

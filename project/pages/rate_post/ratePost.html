@@ -11,22 +11,22 @@
     <div>
         <a href="../../../index.html">Home Page</a>
     </div>
-    <div>
+    <!-- <div>
         Note: this page is pretty unpolished, even for me. Sorry!! If you want to use it, you have to open the devtools
         (or right click and hit "inspect") and go to the console. It shows the calculations and results in the console.
         (and the math behind these calculations is not great - again, it's in a real use-at-own-risk kinda state right
         now.)
-    </div>
+    </div> -->
     <section>
         <div>
             <label for="postId">What's the id of the post you want to rate?</label>
             <input type="text" id="postId">
         </div>
         <div>
-            <label for="tagToRateBy">What tag do you want to rate it by?</label>
-            <input type="text" id="tagToRateBy">
+            <label for="rateByTag">What tag do you want to rate it by?</label>
+            <input type="text" id="rateByTag">
         </div>
-        <div>
+        <!-- <div>
             <label for="tupleSize">What size tuple do you want to use? <a href="./tupleExplainer.html">(wtf does
                     that mean?)</a></label>
             <input type="text" id="tupleSize">
@@ -34,17 +34,18 @@
         <div>
             <label for="amtTuples">How many tuples do you want to use?</label>
             <input type="text" id="amtTuples">
-        </div>
+        </div> -->
     </section>
 
-    <div>
-        <button id="rateButton" class="danger-btn">Rate</button>
-    </div>
-    <div>
-        <a id="r34picLink" target="_blank">
-            <img id="r34pic">
-        </a>
-    </div>
+    <section>
+        <div>
+            <button id="rateButton" class="danger-btn">Rate</button>
+        </div>
+        <div id="postDisplayDiv"></div>
+        <div id="explenationDiv">
+            
+        </div>
+    </section>
 
 </body>
 

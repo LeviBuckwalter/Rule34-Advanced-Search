@@ -1,30 +1,33 @@
 import { smartGetElement } from "../../functions/generalFunctions.js";
-import { ratePost } from "../../../R34-Tools/src/testing/rate_post.js"
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js"
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
+import { PostRater } from "../../classes/PostRater.js";
+import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
+import { Census } from "../../../R34-Tools/src/classes/Census.js";
+import { PostDisplay } from "../../classes/PostDisplay.js";
 
-window.onload = resetAnchor
+window.onload = async function () { await resetAnchor() }
 
-async function rate() {
-    // await resetAnchor()
 
-    const postId = Number(smartGetElement("postId", HTMLInputElement).value)
+const rateByTagEle = smartGetElement("rateByTag", HTMLInputElement)
+const postToRateId = smartGetElement("postId", HTMLInputElement)
+const postDisplayDiv = smartGetElement("postDisplayDiv", HTMLDivElement)
+const explenationDiv = smartGetElement("explenationDiv", HTMLDivElement)
+// smartGetElement("rateButton", HTMLButtonElement).addEventListener("click", async function () {
+//     const postToRateById = Number(postToRateId.value)
+//     const postToRate = (await getPosts(`id:${postToRateById}`, 1, {}))[0]
 
-    const post = (await getPosts(`id:${postId}`, 1, { lookInCache: false, storeInCache: false }))[0]
-    smartGetElement("r34pic", HTMLImageElement).src = post.thumbnailUrl
-    smartGetElement("r34picLink", HTMLAnchorElement).href = post.siteUrl
+//     postDisplayDiv.innerHTML = ""
+//     const PD = new PostDisplay(postToRate, postDisplayDiv)
 
-    const rating = await ratePost(
-        postId,
-        smartGetElement("tagToRateBy", HTMLInputElement).value,
-        Number(smartGetElement("tupleSize", HTMLInputElement).value),
-        Number(smartGetElement("amtTuples", HTMLInputElement).value)
-    )
-    console.log(rating)
+//     const pr = new PostRater(
+//         new SortedSample(await getPosts("", 10000, {})),
+//         new Census(await getPosts(rateByTagEle.value, 1000, {})),
+//         rateByTagEle.value
+//     )
 
-}
-
-smartGetElement("rateButton", HTMLButtonElement).addEventListener("click", rate)
+//     pr.ratePost(postToRate, 2, explenationDiv)
+// })
 
 //////////////////////////////////////////////////////////////
 

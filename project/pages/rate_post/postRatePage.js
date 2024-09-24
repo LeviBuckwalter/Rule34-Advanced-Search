@@ -8,22 +8,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { smartGetElement } from "../../functions/generalFunctions.js";
-import { ratePost } from "../../../R34-Tools/src/testing/rate_post.js";
-import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
-window.onload = resetAnchor;
-function rate() {
-    return __awaiter(this, void 0, void 0, function* () {
-        // await resetAnchor()
-        const postId = Number(smartGetElement("postId", HTMLInputElement).value);
-        const post = (yield getPosts(`id:${postId}`, 1, { lookInCache: false, storeInCache: false }))[0];
-        smartGetElement("r34pic", HTMLImageElement).src = post.thumbnailUrl;
-        smartGetElement("r34picLink", HTMLAnchorElement).href = post.siteUrl;
-        const rating = yield ratePost(postId, smartGetElement("tagToRateBy", HTMLInputElement).value, Number(smartGetElement("tupleSize", HTMLInputElement).value), Number(smartGetElement("amtTuples", HTMLInputElement).value));
-        console.log(rating);
-    });
-}
-smartGetElement("rateButton", HTMLButtonElement).addEventListener("click", rate);
+window.onload = function () {
+    return __awaiter(this, void 0, void 0, function* () { yield resetAnchor(); });
+};
+const rateByTagEle = smartGetElement("rateByTag", HTMLInputElement);
+const postToRateId = smartGetElement("postId", HTMLInputElement);
+const postDisplayDiv = smartGetElement("postDisplayDiv", HTMLDivElement);
+const explenationDiv = smartGetElement("explenationDiv", HTMLDivElement);
+// smartGetElement("rateButton", HTMLButtonElement).addEventListener("click", async function () {
+//     const postToRateById = Number(postToRateId.value)
+//     const postToRate = (await getPosts(`id:${postToRateById}`, 1, {}))[0]
+//     postDisplayDiv.innerHTML = ""
+//     const PD = new PostDisplay(postToRate, postDisplayDiv)
+//     const pr = new PostRater(
+//         new SortedSample(await getPosts("", 10000, {})),
+//         new Census(await getPosts(rateByTagEle.value, 1000, {})),
+//         rateByTagEle.value
+//     )
+//     pr.ratePost(postToRate, 2, explenationDiv)
+// })
 //////////////////////////////////////////////////////////////
 // function html(elementName: string, attributes: {[name: string]: string}, children: any[] = []): any {
 //     return { elementName, attributes, children }
