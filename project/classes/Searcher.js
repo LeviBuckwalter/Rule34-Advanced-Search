@@ -28,9 +28,10 @@ export class Searcher {
             while (this.going) {
                 const batch = yield this.getNewPostBatch();
                 for (const post of batch) {
-                    const rating = this.postRater.ratePost(post, 2);
+                    const rating = this.postRater.ratePostLvlN(post, 2);
                     this.postIdToRating.set(post.id, rating);
                     this.postIdToPost.set(post.id, post);
+                    console.log(`rated post ${post.id} as ${rating}`);
                 }
                 this.displayCallback();
             }
@@ -63,7 +64,7 @@ export class Searcher {
     getNewPostBatch() {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.postIdToRating.size === 0) {
-                return yield getPosts(`${this.rateForTag} ${this.literalSearch}`, 10, { lookInCache: false, storeInCache: false });
+                return yield getPosts(`${this.literalSearch}`, 1, { lookInCache: false, storeInCache: false });
             } //else:
             //analyze this.ratedPosts and come up with an intelligent search
             //1.1 get rated posts array

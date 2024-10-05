@@ -44,9 +44,9 @@ export class PostRater {
 
         const probOfRFTGivenT = probOfTGivenRFT * (commOfT / commOfRFT)
 
-        if (Math.random() < 0.001) {
-            console.log(`rating "${t}" at level 1. probOfTGivenRFT: ${probOfTGivenRFT}, commOfT: ${commOfT}, commOfRFT: ${commOfRFT}, probOfRFTGivenT: ${probOfRFTGivenT}`)
-        }
+        // if (Math.random() < 0.001) {
+        //     console.log(`rating "${t}" at level 1. probOfTGivenRFT: ${probOfTGivenRFT}, commOfT: ${commOfT}, commOfRFT: ${commOfRFT}, probOfRFTGivenT: ${probOfRFTGivenT}`)
+        // }
 
         return Math.log(probOfRFTGivenT)
 
@@ -63,23 +63,41 @@ export class PostRater {
         // return Math.log(amtWithT / amtTotal)
     }
 
-    private rateTagLvlN(t: string, level: number): number | null {
+    private rateTagLvlN(tag: string, level: number): number {
         /*
-        returns either null (meaning there's not enough info to rate the tag) or a number, being the log of the rating of the tag. (<0 being a negative association, >0 being a positive association)
+        returns the log of the rating of the tag
         */
 
         if (level < 1 || level % 1 !== 0) { throw new Error(`level must be a non-zero positive integer`) }
-        if (level === 1) { return this.rateTagLvl1(t) }
+        if (level === 1) { return this.rateTagLvl1(tag) }
         //level 2+:
-        let postsWithT = this.generalSample.fetchPosts(t)
-        if (postsWithT.length > this.parameters.lvl2RateMaxPosts) {
-            postsWithT = postsWithT.slice(0, this.parameters.lvl2RateMaxPosts)
+        let postsWithTag = this.generalSample.fetchPosts(tag)
+
+        if (postsWithTag.length === 0) {
+            return Math.log(0.5)//return 50% chance
+        } else if (postsWithTag.length > this.parameters.lvl2RateMaxPosts) {
+            //1 trim postsWithT and select for the posts that are the most representative of tag
+            //1.1 create a postRater to rate by tag
+            const subPostRater = new PostRater(this.generalSample, new Census(postsWithTag), tag)
+
+            //1.2 rate posts
+            const postIdToRating: Map<number, number> = new Map()
+            for (const post of postsWithTag) {
+                postIdToRating.set(post.id, subPostRater.ratePostLvlN(post, 1))
+            }
+
+            //1.3 sort posts by rating
+            postsWithTag.sort(function (a, b) {
+                return postIdToRating.get(b.id)! - postIdToRating.get(a.id)!
+            })
+
+            //1.4 trim postsWithTag
+            postsWithTag = postsWithTag.slice(0, this.parameters.lvl2RateMaxPosts)
         }
-        if (postsWithT.length === 0) { return Math.log(0.5) }
-        //else, rate postsWithT:
+
         let ratings = []
-        for (const postWithT of postsWithT) {
-            const rating = this.ratePost(postWithT, level - 1)
+        for (const postWithT of postsWithTag) {
+            const rating = this.ratePostLvlN(postWithT, level - 1)
             if (rating) {
                 ratings.push(rating)
             }
@@ -91,7 +109,7 @@ export class PostRater {
         return this.combineProbabilities(...ratings)
     }
 
-    private rateTagWithCache(t: string, level: number) {
+    private rateTagWithCache(t: string, level: number): number {
 
         if (level === 1) {
             const cacheKey = [t, this.rateByTag].join("_")
@@ -118,9 +136,8 @@ export class PostRater {
 
     }
 
-    ratePost(p: Post, level: number): number | null {
-        //the level stays the same. If returns null, it means there's not enough information to rate the post.
-
+    ratePostLvlN(p: Post, level: number): number {
+        //passes the same level down to rateTagLvlN function
 
         let ratings = []
         for (const t of p.tags.values()) {

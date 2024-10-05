@@ -13,7 +13,7 @@ type SmartEl = {
     children: any[]
 }
 
-function smartEl(tag: string, attrs: { [key: string]: string }, children: any[]): SmartEl {
+export function smartEl(tag: string, attrs: { [key: string]: string }, children: any[]): SmartEl {
     return { tag, attrs, children }
 }
 
@@ -23,7 +23,7 @@ function smartEl(tag: string, attrs: { [key: string]: string }, children: any[])
 //     " among posts tagged ",
 // ])
 
-function toHtml(element: SmartEl | string): Node {
+export function toHtml(element: SmartEl | string): Node {
     if (typeof element === "string") {
         return document.createTextNode(element)
     } else {

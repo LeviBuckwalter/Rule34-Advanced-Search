@@ -15,6 +15,7 @@ window.onload = async function () {
 }
 
 
+const maxSubRatePosts = smartGetElement("maxSubRatePosts", HTMLInputElement)
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement)
 const sortForEle = smartGetElement("sortFor", HTMLInputElement)
 const statusDisplayEle = smartGetElement("statusDiv", HTMLDivElement)
@@ -32,6 +33,9 @@ searchButtonEle.addEventListener("click", async function () {
             pdArray.display()
         }
     )
+    if (maxSubRatePosts.value !== "") {
+        searcher.postRater.parameters.lvl2RateMaxPosts = Number(maxSubRatePosts.value)
+    }
 
     searcher.go()
 })

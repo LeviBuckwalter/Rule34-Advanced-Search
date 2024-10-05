@@ -8,7 +8,7 @@ export class Searcher {
     postIdToRating: Map<number, number>
     postIdToPost: Map<number, Post>
     generalSample: SortedSample
-    private postRater: PostRater
+    public postRater: PostRater
     rateForTag: string
     literalSearch: string
     going: boolean
@@ -40,9 +40,10 @@ export class Searcher {
         while (this.going) {
             const batch = await this.getNewPostBatch()
             for (const post of batch) {
-                const rating = this.postRater.ratePost(post, 2)
-                this.postIdToRating.set(post.id, rating!)
+                const rating = this.postRater.ratePostLvlN(post, 2)
+                this.postIdToRating.set(post.id, rating)
                 this.postIdToPost.set(post.id, post)
+                console.log(`rated post ${post.id} as ${rating}`)
             }
             this.displayCallback()
         }
@@ -54,7 +55,7 @@ export class Searcher {
     }
 
     public get sortedPosts() {
-        const ratedPosts = this.ratedPosts
+        const ratedPosts: { post: Post, rating: number }[] = this.ratedPosts
         ratedPosts.sort(function (a, b) {
             return b.rating - a.rating
         })
@@ -78,7 +79,7 @@ export class Searcher {
 
     private async getNewPostBatch() {
         if (this.postIdToRating.size === 0) {
-            return await getPosts(`${this.rateForTag} ${this.literalSearch}`, 10, { lookInCache: false, storeInCache: false })
+            return await getPosts(`${this.literalSearch}`, 1, { lookInCache: false, storeInCache: false })
         }//else:
         //analyze this.ratedPosts and come up with an intelligent search
         //1.1 get rated posts array

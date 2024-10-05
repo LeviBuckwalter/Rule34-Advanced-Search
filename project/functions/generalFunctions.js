@@ -7,7 +7,7 @@ export function smartGetElement(id, constructor) {
         throw new Error(`The element under the id "${id}" was expected to be an instance of ${constructor}, but instead it was ${idReturn}.`);
     }
 }
-function smartEl(tag, attrs, children) {
+export function smartEl(tag, attrs, children) {
     return { tag, attrs, children };
 }
 // el("div", {}, [
@@ -15,7 +15,7 @@ function smartEl(tag, attrs, children) {
 //     el("a", { href: `https://rule34.xxx/index.php?page=post&s=list&tags=${rateByTag}` }, [rateByTag]),
 //     " among posts tagged ",
 // ])
-function toHtml(element) {
+export function toHtml(element) {
     if (typeof element === "string") {
         return document.createTextNode(element);
     }
