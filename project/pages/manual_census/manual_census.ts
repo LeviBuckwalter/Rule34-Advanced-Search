@@ -1,6 +1,6 @@
 import { Census } from "../../../R34-Tools/src/classes/Census.js";
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
-import { smartEl, smartGetElement, toHtml } from "../../functions/generalFunctions.js";
+import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 
 const promptInputEle = smartGetElement("promptInput", HTMLInputElement)
 const sizeInputEle = smartGetElement("sizeInput", HTMLInputElement)

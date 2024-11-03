@@ -47,7 +47,7 @@ export async function getProportion(
         lookInCacheBaseline?: boolean,
         storeInCacheBaseline?: boolean
     } = {}
-): Promise<{ proportion: number, datapoints: number }> {
+): Promise<number> {
     /*
     Gets the proportion of posts defined by promptBaseline that also fit promptSubgroup.
     So, like, if promptBaseline is "feet", and promptSubgroup is "green_eyes", this would answer the question "what proportion of foot posts are tagged green eyes".
@@ -68,10 +68,7 @@ export async function getProportion(
         lookInCache: lookInCacheSubgroup,
         storeInCache: storeInCacheSubgroup
     })
-    return {
-        proportion: (await countSg) / (await countBl),
-        datapoints: await countBl
-    }
+    return (await countSg) / (await countBl)
 }
 
 export async function getRelativeProportion(
@@ -90,4 +87,12 @@ export async function getRelativeProportion(
         relativeProportion: ((await countSg) / (await countBl)) / ((await countSgIndependant) / (await countAll)),
         datapoints: await countBl
     }
+}
+
+export async function getCommonness(tag: string): Promise<number> {
+    //returns the proportion of posts on the site with the given tag
+
+    const amtAllPosts = getCount("", {})
+    const amtPostsTag = getCount(tag, {})
+    return (await amtPostsTag) / (await amtAllPosts)
 }

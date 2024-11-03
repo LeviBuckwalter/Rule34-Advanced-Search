@@ -51,10 +51,7 @@ export function getProportion(promptSubgroup_1, promptBaseline_1) {
             lookInCache: lookInCacheSubgroup,
             storeInCache: storeInCacheSubgroup
         });
-        return {
-            proportion: (yield countSg) / (yield countBl),
-            datapoints: yield countBl
-        };
+        return (yield countSg) / (yield countBl);
     });
 }
 export function getRelativeProportion(promptSubgroup, promptBaseline, options) {
@@ -68,5 +65,13 @@ export function getRelativeProportion(promptSubgroup, promptBaseline, options) {
             relativeProportion: ((yield countSg) / (yield countBl)) / ((yield countSgIndependant) / (yield countAll)),
             datapoints: yield countBl
         };
+    });
+}
+export function getCommonness(tag) {
+    return __awaiter(this, void 0, void 0, function* () {
+        //returns the proportion of posts on the site with the given tag
+        const amtAllPosts = getCount("", {});
+        const amtPostsTag = getCount(tag, {});
+        return (yield amtPostsTag) / (yield amtAllPosts);
     });
 }

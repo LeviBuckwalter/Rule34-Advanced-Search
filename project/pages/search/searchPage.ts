@@ -1,4 +1,4 @@
-import { smartGetElement } from "../../functions/generalFunctions.js"
+import { smartGetElement } from "../../functions/html_functions.js"
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js"
 import { tsToId } from "../../../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js"

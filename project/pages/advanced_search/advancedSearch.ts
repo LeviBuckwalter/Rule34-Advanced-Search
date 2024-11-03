@@ -6,7 +6,7 @@ import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
 import { Searcher } from "../../classes/Searcher.js";
-import { smartGetElement } from "../../functions/generalFunctions.js";
+import { smartGetElement } from "../../functions/html_functions.js";
 
 
 

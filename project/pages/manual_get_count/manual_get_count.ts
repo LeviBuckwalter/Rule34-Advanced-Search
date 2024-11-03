@@ -1,5 +1,5 @@
 import { getCount } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
-import { smartEl, smartGetElement, toHtml } from "../../functions/generalFunctions.js";
+import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 
 const promptSubgroupEle = smartGetElement("promptSubgroup", HTMLInputElement)
 const promptBaselineEle = smartGetElement("promptBaseline", HTMLInputElement)
