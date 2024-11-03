@@ -18,6 +18,7 @@ rateButtonEle.addEventListener("click", function () {
         const ttr = tagToRateEle.value;
         const ttrb = tagToRateByEle.value;
         answerDivEle.replaceChildren();
+        answerDivEle.appendChild(toHtml(smartEl("span", {}, [`The level 2 percent implication from "${ttr}" to "${ttrb}" is: `])));
         answerDivEle.appendChild(toHtml(smartEl("span", {}, [`${(yield rateTagLvl2(ttr, ttrb)) * 100}%`])));
     });
 });

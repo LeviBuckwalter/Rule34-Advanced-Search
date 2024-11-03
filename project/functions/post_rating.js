@@ -18,7 +18,7 @@ export function rateTagLvl2(ttr, ttrb, maxCensusSize, maxTagsFromCensus) {
         den = 1 + p(tOneOne|TTR) + p(tOneTwo|TTR) + ... + p(tOneN|TTR)
         */
         //1 find all level 1 tags
-        console.log(`starting section 1`);
+        // console.log(`starting section 1`)
         const l1Tags = [];
         //1.1 fetch census of TTRB
         const censusTtrb = new Census(yield getPosts(ttrb, (maxCensusSize) ? maxCensusSize : 50000, { lookInCache: false, storeInCache: false }));
@@ -27,7 +27,7 @@ export function rateTagLvl2(ttr, ttrb, maxCensusSize, maxTagsFromCensus) {
             l1Tags.push(tag);
         }
         //2 fetch all values needed for calculation
-        console.log(`starting section 2`);
+        // console.log(`starting section 2`)
         const comTtrb = getCommonness(ttrb);
         const l1TagsData = {};
         for (const l1Tag of l1Tags) {
@@ -37,7 +37,7 @@ export function rateTagLvl2(ttr, ttrb, maxCensusSize, maxTagsFromCensus) {
             };
         }
         //3 calculate formula
-        console.log(`starting section 3`);
+        // console.log(`starting section 3`)
         let num = 0;
         let den = 0;
         num += (yield comTtrb) * 1;

@@ -13,7 +13,7 @@ export async function rateTagLvl2(ttr: string, ttrb: string, maxCensusSize?: num
     */
 
     //1 find all level 1 tags
-    console.log(`starting section 1`)
+    // console.log(`starting section 1`)
 
     const l1Tags: string[] = []
     //1.1 fetch census of TTRB
@@ -24,7 +24,7 @@ export async function rateTagLvl2(ttr: string, ttrb: string, maxCensusSize?: num
     }
 
     //2 fetch all values needed for calculation
-    console.log(`starting section 2`)
+    // console.log(`starting section 2`)
 
     const comTtrb = getCommonness(ttrb)
     const l1TagsData: {
@@ -41,7 +41,7 @@ export async function rateTagLvl2(ttr: string, ttrb: string, maxCensusSize?: num
     }
 
     //3 calculate formula
-    console.log(`starting section 3`)
+    // console.log(`starting section 3`)
 
     let num = 0
     let den = 0
