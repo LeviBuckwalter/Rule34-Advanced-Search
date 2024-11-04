@@ -27,12 +27,11 @@ export class Census {
         }
     }
 
-    percent(tag: string): number {
-        if (this.counts.has(tag)) {
-            return this.counts.get(tag)! / this.size
-        } else {
-            return 0
-        }
+    percent(tag: string, options: { plusOneBuffer?: boolean } = {}): number {
+        const { plusOneBuffer = false } = options
+        const buffer = (plusOneBuffer) ? 1 : 0
+
+        return (this.count(tag) + buffer) / (this.size + buffer)
     }
 
     toArray(amtTags?: number): { tag: string, count: number }[] {

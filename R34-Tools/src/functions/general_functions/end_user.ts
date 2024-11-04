@@ -42,6 +42,7 @@ export async function getProportion(
     promptSubgroup: string,
     promptBaseline: string,
     options: {
+        plusOneBuffer?: boolean,
         lookInCacheSubgroup?: boolean,
         storeInCacheSubgroup?: boolean,
         lookInCacheBaseline?: boolean,
@@ -54,6 +55,7 @@ export async function getProportion(
     */
 
     const {
+        plusOneBuffer = false,
         lookInCacheSubgroup = true,
         storeInCacheSubgroup = true,
         lookInCacheBaseline = true,
@@ -68,7 +70,8 @@ export async function getProportion(
         lookInCache: lookInCacheSubgroup,
         storeInCache: storeInCacheSubgroup
     })
-    return (await countSg) / (await countBl)
+    const buffer = (plusOneBuffer) ? 1 : 0
+    return (await countSg + buffer) / (await countBl + buffer)
 }
 
 export async function getRelativeProportion(

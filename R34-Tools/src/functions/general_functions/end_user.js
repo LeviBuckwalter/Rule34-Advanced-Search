@@ -42,7 +42,7 @@ export function getProportion(promptSubgroup_1, promptBaseline_1) {
         Gets the proportion of posts defined by promptBaseline that also fit promptSubgroup.
         So, like, if promptBaseline is "feet", and promptSubgroup is "green_eyes", this would answer the question "what proportion of foot posts are tagged green eyes".
         */
-        const { lookInCacheSubgroup = true, storeInCacheSubgroup = true, lookInCacheBaseline = true, storeInCacheBaseline = true } = options;
+        const { plusOneBuffer = false, lookInCacheSubgroup = true, storeInCacheSubgroup = true, lookInCacheBaseline = true, storeInCacheBaseline = true } = options;
         const countBl = getCount(promptBaseline, {
             lookInCache: lookInCacheBaseline,
             storeInCache: storeInCacheBaseline
@@ -51,7 +51,8 @@ export function getProportion(promptSubgroup_1, promptBaseline_1) {
             lookInCache: lookInCacheSubgroup,
             storeInCache: storeInCacheSubgroup
         });
-        return (yield countSg) / (yield countBl);
+        const buffer = (plusOneBuffer) ? 1 : 0;
+        return ((yield countSg) + buffer) / ((yield countBl) + buffer);
     });
 }
 export function getRelativeProportion(promptSubgroup, promptBaseline, options) {
