@@ -1,3 +1,6 @@
+//note to self: make sorted sample able to have posts added to it after construction
+
+
 import { Post } from "./Post.js";
 
 export class SortedSample {
@@ -53,5 +56,18 @@ export class SortedSample {
     public commonness(...tags: string[]): number {
         //+1 and +2 so that it's never o or infinity
         return (this.fetchPosts(...tags).length + 1) / (this.size + 2)
+    }
+
+    public topTags(amtTags: number): { tag: string, amt: number }[] {
+        const tagAmts: { tag: string, amt: number }[] = []
+        for (const entry of this.postIdsByTag.entries()) {
+            const tag = entry[0]
+            const amt = entry[1].size
+            tagAmts.push({ tag, amt })
+        }
+        tagAmts.sort(function (a, b) {
+            return b.amt - a.amt
+        })
+        return tagAmts.slice(0, amtTags)
     }
 }

@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getCount } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$_functions.js";
+import { PromptCountFC } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js";
 import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 const promptSubgroupEle = smartGetElement("promptSubgroup", HTMLInputElement);
 const promptBaselineEle = smartGetElement("promptBaseline", HTMLInputElement);
@@ -18,10 +18,10 @@ function goButtonFunc() {
     return __awaiter(this, void 0, void 0, function* () {
         const promptBl = promptBaselineEle.value;
         const promptSg = promptSubgroupEle.value;
-        const countAll = getCount("", { lookInCache: false, storeInCache: false });
-        const countBl = getCount(promptBl, { lookInCache: false, storeInCache: false });
-        const countSg = getCount(promptSg, { lookInCache: false, storeInCache: false });
-        const countSgInBl = getCount(`${promptSg} ${promptBl}`, { lookInCache: false, storeInCache: false });
+        const countAll = PromptCountFC.call("");
+        const countBl = PromptCountFC.call(promptBl);
+        const countSg = PromptCountFC.call(promptSg);
+        const countSgInBl = PromptCountFC.call(`${promptSg} ${promptBl}`);
         returnDivEle.replaceChildren(); //clears children
         returnDivEle.appendChild(toHtml(smartEl("div", {}, [`Count of "${promptSg}" in "${promptBl}": ${yield countSgInBl}`])));
         returnDivEle.appendChild(toHtml(smartEl("div", {}, [`Count of "${promptBl}": ${yield countBl}`])));

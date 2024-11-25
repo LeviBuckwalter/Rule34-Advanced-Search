@@ -1,0 +1,50 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Dumb Advanced Search</title>
+</head>
+
+<body>
+    <main>
+        <h1>Advanced Search</h1>
+        <div>
+            <a href="../../../index.html">Home Page</a>
+        </div>
+        <section>
+            <h3>Create Tag Rater</h3>
+            <div>
+                <label for="ttrb">Tag to rate by:</label>
+                <input type="text" id="ttrb">
+            </div>
+            <div>
+                <button id="createRater">Create Rater</button>
+            </div>
+            <div>
+                <button id="checkInit">Check initialization status</button>
+            </div>
+            <div id="initStatus"></div>
+        </section>
+        <section>
+            <h3>Search</h3>
+            <div>
+                <label for="literalSearch">Literal search:</label>
+                <input type="text" id="literalSearch">
+            </div>
+            <div>
+                <label for="batchSize">Posts per batch:</label>
+                <input type="text" id="batchSize">
+            </div>
+            <button id="fetchBatch" class="danger-btn">Fetch A Batch</button>
+        </section>
+        <section class="wide-content">
+            <h3>Search Results</h3>
+            <span id="searchResults"></span>
+        </section>
+    </main>
+</body>
+
+<script type="module" async="true" src="./dumb_advanced_search.js"></script>
+
+</html>

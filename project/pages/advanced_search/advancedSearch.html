@@ -13,14 +13,20 @@
             <a href="../../../index.html">Home Page</a>
         </div>
         <section>
-            <details>
+            <!-- <details>
                 <summary>Options</summary>
                 <label for="maxSubRatePosts">Max posts for subrating</label>
                 <input type="text" id="maxSubRatePosts">
-            </details>
+            </details> -->
             <div>
                 <label for="literalSearch">Literal search</label>
                 <input type="text" id="literalSearch">
+            </div>
+            <div>
+                <label>
+                    Amount of posts
+                    <input type="text" id="amtPosts">
+                </label>
             </div>
             <div>
                 <label for="sortFor">Sort by</label>
@@ -28,9 +34,7 @@
             </div>
             <div>
                 <button id="searchButton" class="danger-btn">Search</button>
-                <button id="stopSearchButton">Stop Search</button>
             </div>
-            <div id="statusDiv"></div>
         </section>
         <section class="wide-content">
             <span id="postDisplay"></span>

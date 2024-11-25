@@ -7,6 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { Cache } from "../../R34-Tools/Cache/src/classes/Cache.js";
+import { PromptCountFC } from "../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js";
 import { Census } from "../../R34-Tools/src/classes/Census.js";
 import { getCommonness, getPosts } from "../../R34-Tools/src/functions/general_functions/end_user.js";
 /*
@@ -44,11 +46,12 @@ num = p(ttrb)*(1 + (p(t11|ttrb)*p(t11|ttr))/p(t11) + (p(t12|ttrb)*p(t12|ttr))/p(
 den = 1 + p(t11|ttr) + p(t12|ttr) + ... + p(t1n|ttr)
 */
 export class l2TagRater {
-    constructor(ttrb, { ttrCensusSize = 10000, ttrbCensusSize = 100000, maxL1TagsTtr = 250, maxL1TagsTtrb = 250 } = {}) {
+    constructor(ttrb, { ttrCensusSize = 1000, ttrbCensusSize = 100000, maxL1TagsTtr = 250, maxL1TagsTtrb = 250, formulaFirstTerm = true, cacheSize = 50000 } = {}) {
         this.initialized = false;
-        this.parameters = { ttrCensusSize, ttrbCensusSize, maxL1TagsTtr, maxL1TagsTtrb };
+        this.parameters = { ttrCensusSize, ttrbCensusSize, maxL1TagsTtr, maxL1TagsTtrb, formulaFirstTerm, cacheSize };
         this.ttrb = ttrb;
         this.topTagsTtrb = new Set();
+        this.tagRatingsCache = new Cache(this.parameters.cacheSize);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -57,20 +60,21 @@ export class l2TagRater {
             for (const { tag } of this.censusTtrb.toArray(this.parameters.maxL1TagsTtrb)) {
                 this.topTagsTtrb.add(tag);
             }
+            yield PromptCountFC.call("");
             this.initialized = true;
         });
     }
-    rate(ttr) {
+    rateWithoutCache(ttr) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.initialized) {
                 throw new Error("l2TagRater is not initialized yet and can't rate any tags");
             }
             //1 fetch census of tag to rate
-            const censusTtr = new Census(yield getPosts(ttr, this.parameters.maxL1TagsTtr, { lookInCache: false, storeInCache: false }));
+            const censusTtr = new Census(yield getPosts(ttr, this.parameters.ttrCensusSize, { lookInCache: false, storeInCache: false }));
             //2 assemble list of level 1 tags to include in formula
             const chosenL1Tags = new Set();
             //2.1 add in important tags from census of tag to rate
-            for (const { tag } of censusTtr.toArray(250)) {
+            for (const { tag } of censusTtr.toArray(this.parameters.maxL1TagsTtr)) {
                 chosenL1Tags.add(tag);
             }
             //2.2 add in important tags from census of tag to rate by
@@ -91,8 +95,10 @@ export class l2TagRater {
             //den = 1 + p(t11|ttr) + p(t12|ttr) + ... + p(t1n|ttr)
             let num = 0;
             let den = 0;
-            num += 1;
-            den += 1;
+            if (this.parameters.formulaFirstTerm) {
+                num += 1;
+                den += 1;
+            }
             for (const l1Tag of chosenL1Tags) {
                 //numerator term: (p(t1x|ttrb)*p(t1x|ttr))/p(t1x)
                 const t1xGivenTtrb = this.censusTtrb.percent(l1Tag, { plusOneBuffer: true });
@@ -104,6 +110,40 @@ export class l2TagRater {
             }
             num *= this.comTtrb;
             return num / den;
+        });
+    }
+    rate(ttr) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const $key = ttr;
+            const $ret = this.tagRatingsCache.retrieve($key);
+            if ($ret) {
+                return $ret;
+            }
+            else {
+                const calcRet = this.rateWithoutCache(ttr);
+                this.tagRatingsCache.store($key, calcRet);
+                return calcRet;
+            }
+        });
+    }
+    ratePost(post) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const tagRatingPromises = [];
+            for (const tag of post.tags.values()) {
+                if (tag === this.ttrb) {
+                    continue;
+                }
+                tagRatingPromises.push(this.rate(tag));
+            }
+            const ratings = yield Promise.all(tagRatingPromises);
+            //trueProbFor = 1/{1+[(1/p1) - 1]*[(1/p2) - 1]*...*[(1/pn) - 1)]}
+            //first calculate [(1/p1) - 1]*[(1/p2) - 1]*...*[(1/pn) - 1)]
+            let sumOfLogs = 0;
+            for (const rating of ratings) {
+                sumOfLogs += Math.log10((1 / rating) - 1);
+            }
+            const product = Math.pow(10, sumOfLogs);
+            return 1 / (1 + product);
         });
     }
 }

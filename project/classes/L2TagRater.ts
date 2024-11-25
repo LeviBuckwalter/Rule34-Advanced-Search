@@ -1,4 +1,7 @@
+import { Cache } from "../../R34-Tools/Cache/src/classes/Cache.js"
+import { PromptCountFC } from "../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js"
 import { Census } from "../../R34-Tools/src/classes/Census.js"
+import { Post } from "../../R34-Tools/src/classes/Post.js"
 import { getCommonness, getPosts } from "../../R34-Tools/src/functions/general_functions/end_user.js"
 
 /*
@@ -42,33 +45,41 @@ export class l2TagRater {
         ttrCensusSize: number,
         ttrbCensusSize: number,
         maxL1TagsTtrb: number,
-        maxL1TagsTtr: number
+        maxL1TagsTtr: number,
+        formulaFirstTerm: boolean,//the first term in the numerator and denominator of the formula is for accounting for how common or uncommon ttrb is in general. It might be better not to include it
+        cacheSize: number
     }
     initialized: boolean
     ttrb: string//tag to rate by
     comTtrb: undefined | number
     censusTtrb: undefined | Census//type assertion, saying "this will be defined by the time it's used." (if not, that's a problem)
     topTagsTtrb: Set<string>
+    tagRatingsCache: Cache<Promise<number>>
 
 
     constructor(
         ttrb: string,
         {
-            ttrCensusSize = 10000,
+            ttrCensusSize = 1000,
             ttrbCensusSize = 100000,
             maxL1TagsTtr = 250,
-            maxL1TagsTtrb = 250
+            maxL1TagsTtrb = 250,
+            formulaFirstTerm = true,
+            cacheSize = 50000
         }: {
             ttrCensusSize?: number,
             ttrbCensusSize?: number,
             maxL1TagsTtr?: number,
-            maxL1TagsTtrb?: number
+            maxL1TagsTtrb?: number,
+            formulaFirstTerm?: boolean,
+            cacheSize?: number
         } = {}
     ) {
         this.initialized = false
-        this.parameters = { ttrCensusSize, ttrbCensusSize, maxL1TagsTtr, maxL1TagsTtrb }
+        this.parameters = { ttrCensusSize, ttrbCensusSize, maxL1TagsTtr, maxL1TagsTtrb, formulaFirstTerm, cacheSize }
         this.ttrb = ttrb
         this.topTagsTtrb = new Set()
+        this.tagRatingsCache = new Cache(this.parameters.cacheSize)
     }
 
     async init() {
@@ -77,21 +88,22 @@ export class l2TagRater {
         for (const { tag } of this.censusTtrb.toArray(this.parameters.maxL1TagsTtrb)) {
             this.topTagsTtrb.add(tag)
         }
+        await PromptCountFC.call("")
         this.initialized = true
     }
 
-    async rate(ttr: string): Promise<number> {
+    async rateWithoutCache(ttr: string): Promise<number> {
         if (!this.initialized) {
             throw new Error("l2TagRater is not initialized yet and can't rate any tags")
         }
 
         //1 fetch census of tag to rate
-        const censusTtr = new Census(await getPosts(ttr, this.parameters.maxL1TagsTtr, { lookInCache: false, storeInCache: false }))
+        const censusTtr = new Census(await getPosts(ttr, this.parameters.ttrCensusSize, { lookInCache: false, storeInCache: false }))
 
         //2 assemble list of level 1 tags to include in formula
         const chosenL1Tags: Set<string> = new Set()
         //2.1 add in important tags from census of tag to rate
-        for (const { tag } of censusTtr.toArray(250)) {
+        for (const { tag } of censusTtr.toArray(this.parameters.maxL1TagsTtr)) {
             chosenL1Tags.add(tag)
         }
         //2.2 add in important tags from census of tag to rate by
@@ -114,8 +126,11 @@ export class l2TagRater {
         //den = 1 + p(t11|ttr) + p(t12|ttr) + ... + p(t1n|ttr)
         let num = 0
         let den = 0
-        num += 1
-        den += 1
+        if (this.parameters.formulaFirstTerm) {
+            num += 1
+            den += 1
+        }
+
         for (const l1Tag of chosenL1Tags) {
             //numerator term: (p(t1x|ttrb)*p(t1x|ttr))/p(t1x)
             const t1xGivenTtrb = this.censusTtrb!.percent(l1Tag, { plusOneBuffer: true })
@@ -129,5 +144,36 @@ export class l2TagRater {
         num *= this.comTtrb!
 
         return num / den
+    }
+
+    async rate(ttr: string): Promise<number> {
+        const $key = ttr
+        const $ret = this.tagRatingsCache.retrieve($key)
+        if ($ret) {
+            return $ret
+        } else {
+            const calcRet = this.rateWithoutCache(ttr)
+            this.tagRatingsCache.store($key, calcRet)
+            return calcRet
+        }
+    }
+
+    async ratePost(post: Post): Promise<number> {
+        const tagRatingPromises: Promise<number>[] = []
+        for (const tag of post.tags.values()) {
+            if (tag === this.ttrb) { continue }
+            tagRatingPromises.push(this.rate(tag))
+        }
+
+        const ratings = await Promise.all(tagRatingPromises)
+
+        //trueProbFor = 1/{1+[(1/p1) - 1]*[(1/p2) - 1]*...*[(1/pn) - 1)]}
+        //first calculate [(1/p1) - 1]*[(1/p2) - 1]*...*[(1/pn) - 1)]
+        let sumOfLogs = 0
+        for (const rating of ratings) {
+            sumOfLogs += Math.log10((1 / rating) - 1)
+        }
+        const product = Math.pow(10, sumOfLogs)
+        return 1 / (1 + product)
     }
 }

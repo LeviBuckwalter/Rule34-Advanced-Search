@@ -1,6 +1,6 @@
 import { Post } from "../../classes/Post.js"
 import { postsApiWithCache } from "../../caches/post_caching/post_caching_functions.js"
-import { getCount } from "../../caches/prompt_count_cache/PromptCount$_functions.js"
+import { PromptCountFC } from "../../caches/prompt_count_cache/PromptCount$.js"
 
 export async function getPosts(
     prompt: string,
@@ -62,14 +62,8 @@ export async function getProportion(
         storeInCacheBaseline = true
     } = options
 
-    const countBl = getCount(promptBaseline, {
-        lookInCache: lookInCacheBaseline,
-        storeInCache: storeInCacheBaseline
-    })
-    const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, {
-        lookInCache: lookInCacheSubgroup,
-        storeInCache: storeInCacheSubgroup
-    })
+    const countBl = PromptCountFC.call(promptBaseline)
+    const countSg = PromptCountFC.call(`${promptBaseline} ${promptSubgroup}`)
     const buffer = (plusOneBuffer) ? 1 : 0
     return (await countSg + buffer) / (await countBl + buffer)
 }
@@ -77,14 +71,11 @@ export async function getProportion(
 export async function getRelativeProportion(
     promptSubgroup: string,
     promptBaseline: string,
-    options: { lookInCache?: boolean, storeInCache?: boolean }
 ): Promise<{ relativeProportion: number, datapoints: number }> {
-    const { lookInCache = true, storeInCache = true } = options
-
-    const countAll = getCount("", { lookInCache, storeInCache })
-    const countBl = getCount(promptBaseline, { lookInCache, storeInCache })
-    const countSgIndependant = getCount(promptSubgroup, { lookInCache, storeInCache })
-    const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, { lookInCache, storeInCache })
+    const countAll = PromptCountFC.call("")
+    const countBl = PromptCountFC.call(promptBaseline)
+    const countSgIndependant = PromptCountFC.call(promptSubgroup)
+    const countSg = PromptCountFC.call(`${promptBaseline} ${promptSubgroup}`)
 
     return {
         relativeProportion: ((await countSg) / (await countBl)) / ((await countSgIndependant) / (await countAll)),
@@ -95,7 +86,7 @@ export async function getRelativeProportion(
 export async function getCommonness(tag: string): Promise<number> {
     //returns the proportion of posts on the site with the given tag
 
-    const amtAllPosts = getCount("", {})
-    const amtPostsTag = getCount(tag, {})
+    const amtAllPosts = PromptCountFC.call("")
+    const amtPostsTag = PromptCountFC.call(tag)
     return (await amtPostsTag) / (await amtAllPosts)
 }

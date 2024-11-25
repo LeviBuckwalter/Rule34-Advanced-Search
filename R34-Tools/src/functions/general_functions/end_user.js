@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { postsApiWithCache } from "../../caches/post_caching/post_caching_functions.js";
-import { getCount } from "../../caches/prompt_count_cache/PromptCount$_functions.js";
+import { PromptCountFC } from "../../caches/prompt_count_cache/PromptCount$.js";
 export function getPosts(prompt, amtPosts, options) {
     return __awaiter(this, void 0, void 0, function* () {
         const { lookInCache = true, storeInCache = true } = options;
@@ -43,25 +43,18 @@ export function getProportion(promptSubgroup_1, promptBaseline_1) {
         So, like, if promptBaseline is "feet", and promptSubgroup is "green_eyes", this would answer the question "what proportion of foot posts are tagged green eyes".
         */
         const { plusOneBuffer = false, lookInCacheSubgroup = true, storeInCacheSubgroup = true, lookInCacheBaseline = true, storeInCacheBaseline = true } = options;
-        const countBl = getCount(promptBaseline, {
-            lookInCache: lookInCacheBaseline,
-            storeInCache: storeInCacheBaseline
-        });
-        const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, {
-            lookInCache: lookInCacheSubgroup,
-            storeInCache: storeInCacheSubgroup
-        });
+        const countBl = PromptCountFC.call(promptBaseline);
+        const countSg = PromptCountFC.call(`${promptBaseline} ${promptSubgroup}`);
         const buffer = (plusOneBuffer) ? 1 : 0;
         return ((yield countSg) + buffer) / ((yield countBl) + buffer);
     });
 }
-export function getRelativeProportion(promptSubgroup, promptBaseline, options) {
+export function getRelativeProportion(promptSubgroup, promptBaseline) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { lookInCache = true, storeInCache = true } = options;
-        const countAll = getCount("", { lookInCache, storeInCache });
-        const countBl = getCount(promptBaseline, { lookInCache, storeInCache });
-        const countSgIndependant = getCount(promptSubgroup, { lookInCache, storeInCache });
-        const countSg = getCount(`${promptBaseline} ${promptSubgroup}`, { lookInCache, storeInCache });
+        const countAll = PromptCountFC.call("");
+        const countBl = PromptCountFC.call(promptBaseline);
+        const countSgIndependant = PromptCountFC.call(promptSubgroup);
+        const countSg = PromptCountFC.call(`${promptBaseline} ${promptSubgroup}`);
         return {
             relativeProportion: ((yield countSg) / (yield countBl)) / ((yield countSgIndependant) / (yield countAll)),
             datapoints: yield countBl
@@ -71,8 +64,8 @@ export function getRelativeProportion(promptSubgroup, promptBaseline, options) {
 export function getCommonness(tag) {
     return __awaiter(this, void 0, void 0, function* () {
         //returns the proportion of posts on the site with the given tag
-        const amtAllPosts = getCount("", {});
-        const amtPostsTag = getCount(tag, {});
+        const amtAllPosts = PromptCountFC.call("");
+        const amtPostsTag = PromptCountFC.call(tag);
         return (yield amtPostsTag) / (yield amtAllPosts);
     });
 }

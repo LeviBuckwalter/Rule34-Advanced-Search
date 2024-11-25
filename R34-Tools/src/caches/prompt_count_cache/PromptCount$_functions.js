@@ -8,17 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { FC } from "../../functions/API_access/the_fetch_conductor.js";
-import { PromptCount$ } from "./PromptCount$.js";
-export function getCount(prompt, options) {
+export function getCountWithoutCache(prompt) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { lookInCache = true, storeInCache = true } = options;
-        const key = PromptCount$.makeKey(prompt);
-        if (lookInCache) {
-            const pc$Ret = PromptCount$.retrieve(key);
-            if (pc$Ret) {
-                return pc$Ret;
-            }
-        } //else:
         const url = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&tags=${prompt}&pid=0&limit=1`;
         function myEgg() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -35,9 +26,39 @@ export function getCount(prompt, options) {
         else {
             ret = Number(m[0].replace(`<posts count="`, ""));
         }
-        if (storeInCache) {
-            PromptCount$.store(key, ret, 1000 * 60 * 60 * 24 * 7);
-        }
         return ret;
     });
 }
+// export async function getCount(
+//     prompt: string,
+//     options: {
+//         lookInCache?: boolean,
+//         storeInCache?: boolean
+//     }
+// ): Promise<number> {
+//     const {lookInCache = true, storeInCache = true} = options
+//     const key = PromptCount$.makeKey(prompt)
+//     if (lookInCache) {
+//         const pc$Ret = PromptCount$.retrieve(key)
+//         if (pc$Ret) {
+//             return pc$Ret
+//         }
+//     }//else:
+//     const url = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&tags=${prompt}&pid=0&limit=1`
+//     async function myEgg(): Promise<string> {
+//         const resp = await fetch(url)
+//         return await resp.text()
+//     }
+//     const text: string | null = await FC.ticket(myEgg)
+//     const m = text.match(/<posts count="\d*/)
+//     let ret
+//     if (m === null) {
+//         throw new Error("posts count was not found in corpus")
+//     } else {
+//         ret = Number(m[0].replace(`<posts count="`, ""))
+//     }
+//     if (storeInCache) {
+//         PromptCount$.store(key, ret, 1000*60*60*24*7)
+//     }
+//     return ret
+// }
