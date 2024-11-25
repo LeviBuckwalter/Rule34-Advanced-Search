@@ -52,14 +52,14 @@ searchButtonEle.addEventListener("click", function () {
                         amtPostsTotal: PromptCountFC.call(`${tag}`)
                     });
                 }
-                let sumOfLogs = 0;
+                let sum = 0;
                 for (const obj of tagRatingIngredients) {
                     const amtPostsWithout = (yield obj.amtPostsTotal) - (yield obj.amtPostsWith);
-                    sumOfLogs += Math.log10((amtPostsWithout + 1) / ((yield obj.amtPostsWith) + 1));
+                    sum += ((yield obj.amtPostsWith) + 1) / (amtPostsWithout + 1);
                 }
-                const product = Math.pow(10, sumOfLogs);
-                console.log(`rating of ${1 / (1 + product)}: ${post.siteUrl}`);
-                return 1 / (1 + product);
+                const rating = sum / post.tags.size;
+                console.log(`rating of ${rating}: ${post.siteUrl}`);
+                return rating;
             });
         }
     });

@@ -51,16 +51,16 @@ searchButtonEle.addEventListener("click", async function () {
                 amtPostsTotal: PromptCountFC.call(`${tag}`)
             })
         }
-        let sumOfLogs = 0
+        let sum = 0
         for (const obj of tagRatingIngredients) {
             const amtPostsWithout = await obj.amtPostsTotal - await obj.amtPostsWith
-            sumOfLogs += Math.log10((amtPostsWithout + 1) / (await obj.amtPostsWith + 1))
+            sum += (await obj.amtPostsWith + 1) / (amtPostsWithout + 1)
         }
-        const product = Math.pow(10, sumOfLogs)
+        const rating = sum / post.tags.size
 
-        console.log(`rating of ${1 / (1 + product)}: ${post.siteUrl}`)
+        console.log(`rating of ${rating}: ${post.siteUrl}`)
 
-        return 1 / (1 + product)
+        return rating
     }
 })
 
