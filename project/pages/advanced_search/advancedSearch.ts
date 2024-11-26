@@ -3,7 +3,7 @@ import { PromptCountFC } from "../../../R34-Tools/src/caches/prompt_count_cache/
 import { Census } from "../../../R34-Tools/src/classes/Census.js";
 import { Post } from "../../../R34-Tools/src/classes/Post.js";
 import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
-import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
 import { Searcher } from "../../classes/Searcher.js";
 import { smartGetElement } from "../../functions/html_functions.js";
@@ -20,8 +20,10 @@ const amtPostsEle = smartGetElement("amtPosts", HTMLInputElement)
 const sortForEle = smartGetElement("sortFor", HTMLInputElement)
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement)
 searchButtonEle.addEventListener("click", async function () {
-    const searchForPrompt = sortForEle.value
+    const ttrb = sortForEle.value
     const literalSearchPrompt = literalSearchEle.value
+    const comTtrb = getCommonness(ttrb)
+
     if (amtPostsEle.value === "") {
         amtPostsEle.value = `${100}`
     }
@@ -44,19 +46,20 @@ searchButtonEle.addEventListener("click", async function () {
     pdArray.display()
 
     async function ratePost(post: Post): Promise<number> {
-        const tagRatingIngredients: { amtPostsWith: Promise<number>, amtPostsTotal: Promise<number> }[] = []
-        for (const tag of post.tags.values()) {
+        const tagRatingIngredients: { amtTtrWithTtrb: Promise<number>, amtTtr: Promise<number> }[] = []
+        for (const ttr of post.tags.values()) {
             tagRatingIngredients.push({
-                amtPostsWith: PromptCountFC.call(`${tag} ${searchForPrompt}`),
-                amtPostsTotal: PromptCountFC.call(`${tag}`)
+                amtTtrWithTtrb: PromptCountFC.call(`${ttr} ${ttrb}`),
+                amtTtr: PromptCountFC.call(`${ttr}`)
             })
         }
-        let sum = 0
+        //take geometric mean of commonness of ttrb within ttr divided by the overrall commonness of ttrb. That way if a tag is saying "meh ttrb is about as common here as anywhere" it will have little effect on the average.
+        let sumOfLogs = 0
         for (const obj of tagRatingIngredients) {
-            const amtPostsWithout = await obj.amtPostsTotal - await obj.amtPostsWith
-            sum += (await obj.amtPostsWith + 1) / (amtPostsWithout + 1)
+            const comTtrbWithinTtr = (await obj.amtTtrWithTtrb + 1) / (await obj.amtTtr + 1)
+            sumOfLogs += Math.log10(comTtrbWithinTtr / await comTtrb)
         }
-        const rating = sum / post.tags.size
+        const rating = Math.pow(10, sumOfLogs / post.tags.size)
 
         console.log(`rating of ${rating}: ${post.siteUrl}`)
 
