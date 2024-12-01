@@ -1,4 +1,4 @@
-import { l2TagRaterV2 } from "../../classes/L2TagRaterV2.js";
+import { l2TagRater } from "../../classes/tag raters/L2TagRater.js";
 import { roundTo } from "../../functions/general_functions.js";
 import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 
@@ -10,14 +10,14 @@ const tagToRateEle = smartGetElement("tagToRate", HTMLInputElement)
 const rateButtonEle = smartGetElement("rateButton", HTMLButtonElement)
 const answerDivEle = smartGetElement("answerDiv", HTMLDivElement)
 
-let tagRater: undefined | l2TagRaterV2 = undefined
+let tagRater: undefined | l2TagRater = undefined
 let ttrb: undefined | string = undefined
 
 createRaterButtonEle.addEventListener("click", async function () {
     ttrb = tagToRateByEle.value
     const ttrCensusSize = (ttrCensusSizeEle.value === "") ? undefined : Number(ttrCensusSizeEle.value)
     const formulaFirstTerm = formulaFirstTermEle.checked
-    tagRater = new l2TagRaterV2(ttrb)
+    tagRater = new l2TagRater(ttrb)
     tagRater.init()
     console.log(tagRater.initialized)
 })

@@ -5,7 +5,6 @@ import { Post } from "../../../R34-Tools/src/classes/Post.js";
 import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
 import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
-import { Searcher } from "../../classes/Searcher.js";
 import { smartGetElement } from "../../functions/html_functions.js";
 
 
@@ -14,60 +13,166 @@ window.onload = async function () {
     await resetAnchor()
 }
 
+const exhaustedTags: Set<string> = new Set()
+let topTagsList: { tag: string, rating: number }[] = []
+const topTagsSet: Set<string> = new Set()
+const maxTopTags: number = 100
+let searching: boolean = false
+
 
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement)
-const amtPostsEle = smartGetElement("amtPosts", HTMLInputElement)
 const sortForEle = smartGetElement("sortFor", HTMLInputElement)
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement)
+const stopSearchButtonEle = smartGetElement("stopSearchButton", HTMLButtonElement)
+stopSearchButtonEle.addEventListener("click", function () { searching = false })
 searchButtonEle.addEventListener("click", async function () {
+    exhaustedTags.clear()
+    topTagsList = []
+    topTagsSet.clear()
+
     const ttrb = sortForEle.value
     const literalSearchPrompt = literalSearchEle.value
     const comTtrb = getCommonness(ttrb)
+    const ratedPostsById: Map<number, Post> = new Map()
+    const ratingsById: Map<number, number> = new Map()
+    const ratedPostsOrdered: Post[] = []
 
-    if (amtPostsEle.value === "") {
-        amtPostsEle.value = `${100}`
-    }
-    const amtPostsNum = Number(amtPostsEle.value)
+    searching = true
+    while (searching) {
+        let tagCurrentlySearching: string | null = null
+        if (topTagsList.length > 0) {
+            console.log(topTagsList[0].tag, topTagsList[0].rating)
+            tagCurrentlySearching = topTagsList[0].tag
+        }
 
-    const postsToRate = await getPosts(literalSearchPrompt, amtPostsNum, {})
-    const postRatingPromisesById: Map<number, Promise<number>> = new Map()
-    for (const post of postsToRate) {
-        postRatingPromisesById.set(post.id, ratePost(post))
-    }
-    const postRatingsById: Map<number, number> = new Map()
-    for (const post of postsToRate) {
-        postRatingsById.set(post.id, await postRatingPromisesById.get(post.id)!)
-    }
-    postsToRate.sort(function (a, b) {
-        return postRatingsById.get(b.id)! - postRatingsById.get(a.id)!
-    })
-
-    pdArray.posts = postsToRate
-    pdArray.display()
-
-    async function ratePost(post: Post): Promise<number> {
-        const tagRatingIngredients: { amtTtrWithTtrb: Promise<number>, amtTtr: Promise<number> }[] = []
-        for (const ttr of post.tags.values()) {
-            tagRatingIngredients.push({
-                amtTtrWithTtrb: PromptCountFC.call(`${ttr} ${ttrb}`),
-                amtTtr: PromptCountFC.call(`${ttr}`)
+        const searchPrompt = `${literalSearchPrompt} ${(tagCurrentlySearching) ? tagCurrentlySearching : ""}`
+        const postsToRate = await getPosts(searchPrompt, 1000, {})
+        const postRatingPromises: { post: Post, ratingPromise: Promise<number> }[] = []
+        for (const post of postsToRate) {
+            if (ratedPostsById.has(post.id)) { continue }
+            postRatingPromises.push({
+                post: post,
+                ratingPromise: ratePost(post, ttrb, await comTtrb)
             })
+            if (postRatingPromises.length >= 10) {
+                break
+            }
         }
-        //take geometric mean of commonness of ttrb within ttr divided by the overrall commonness of ttrb. That way if a tag is saying "meh ttrb is about as common here as anywhere" it will have little effect on the average.
-        let sumOfLogs = 0
-        for (const obj of tagRatingIngredients) {
-            const comTtrbWithinTtr = (await obj.amtTtrWithTtrb + 1) / (await obj.amtTtr + 1)
-            sumOfLogs += Math.log10(comTtrbWithinTtr / await comTtrb)
+        if (postRatingPromises.length < 10) {
+            if (!tagCurrentlySearching) {
+                console.log("reached end of literal search")
+                searching = false
+            } else {
+                exhaustedTags.add(tagCurrentlySearching)
+                topTagsList.splice(0, 1)
+            }
         }
-        const rating = Math.pow(10, sumOfLogs / post.tags.size)
-
-        console.log(`rating of ${rating}: ${post.siteUrl}`)
-
-        return rating
+        for (const { post, ratingPromise } of postRatingPromises) {
+            ratedPostsById.set(post.id, post)
+            ratingsById.set(post.id, await ratingPromise)
+            ratedPostsOrdered.push(post)
+        }
+        ratedPostsOrdered.sort(function (a, b) {
+            return ratingsById.get(b.id)! - ratingsById.get(a.id)!
+        })
+        pdArray.posts = ratedPostsOrdered
+        pdArray.display()
     }
+
+
+    // const postRatingPromisesById: Map<number, Promise<number>> = new Map()
+    // for (const post of postsToRate) {
+    //     postRatingPromisesById.set(post.id, ratePost(post, ttrb, await comTtrb))
+    // }
+    // const postRatingsById: Map<number, number> = new Map()
+    // for (const post of postsToRate) {
+    //     postRatingsById.set(post.id, await postRatingPromisesById.get(post.id)!)
+    // }
+    // postsToRate.sort(function (a, b) {
+    //     return postRatingsById.get(b.id)! - postRatingsById.get(a.id)!
+    // })
+
+    // pdArray.posts = postsToRate
+    // pdArray.display()
 })
 
+// searchButtonEle.addEventListener("click", async function () {
+//     const ttrb = sortForEle.value
+//     const literalSearchPrompt = literalSearchEle.value
+//     const comTtrb = getCommonness(ttrb)
+
+//     if (amtPostsEle.value === "") {
+//         amtPostsEle.value = `${100}`
+//     }
+//     const amtPostsNum = Number(amtPostsEle.value)
+
+//     const postsToRate = await getPosts(literalSearchPrompt, amtPostsNum, {})
+//     const postRatingPromisesById: Map<number, Promise<number>> = new Map()
+//     for (const post of postsToRate) {
+//         postRatingPromisesById.set(post.id, ratePost(post, ttrb, await comTtrb))
+//     }
+//     const postRatingsById: Map<number, number> = new Map()
+//     for (const post of postsToRate) {
+//         postRatingsById.set(post.id, await postRatingPromisesById.get(post.id)!)
+//     }
+//     postsToRate.sort(function (a, b) {
+//         return postRatingsById.get(b.id)! - postRatingsById.get(a.id)!
+//     })
+
+//     pdArray.posts = postsToRate
+//     pdArray.display()
+// })
+
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {})
+
+
+
+async function rateTag(ttr: string, ttrb: string): Promise<number> {
+    //returns the implied probability of ttrb given ttr. NOT RELATIVE TO COMTTRB
+
+    const amtTtrWithTtrb = PromptCountFC.call(`${ttr} ${ttrb}`)
+    const amtTtr = PromptCountFC.call(`${ttr}`)
+
+    const rating = (await amtTtrWithTtrb + 1) / (await amtTtr + 1)
+
+    //add ttr to top tags
+    if (ttr !== ttrb && !topTagsSet.has(ttr) && await amtTtrWithTtrb > 0 && (topTagsList.length < maxTopTags || rating > topTagsList[topTagsList.length - 1].rating)) {
+        topTagsSet.add(ttr)
+        topTagsList.push({
+            tag: ttr,
+            rating: rating
+        })
+        topTagsList.sort(function (a, b) {
+            return b.rating - a.rating
+        })
+        topTagsList = topTagsList.slice(0, maxTopTags)
+    }
+
+    return rating
+}
+
+async function ratePost(postToRate: Post, ttrb: string, comTtrb: number): Promise<number> {
+    const tagRatingPromises: Promise<number>[] = []
+    for (const tag of postToRate.tags.values()) {
+        tagRatingPromises.push(rateTag(tag, ttrb))
+    }
+
+    const tagRatings = await Promise.all(tagRatingPromises)
+
+    let sumOfLogs = 0
+    for (const rating of tagRatings) {
+        sumOfLogs += Math.log10(rating / comTtrb)
+    }
+    const avgLogs = sumOfLogs / postToRate.tags.size
+
+    return avgLogs
+}
+
+
+
+
+
+
 
 
 

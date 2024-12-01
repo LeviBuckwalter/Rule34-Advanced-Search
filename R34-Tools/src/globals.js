@@ -1,1 +1,1 @@
-export const problemStrs = ["&eacute;", "&#039;", "+", "&amp;", "&gt;", "&lt;", "&uacute;", "&ntilde;", "&iacute;"];
+export const problemStrs = ["&eacute;", "&#039;", "+", "&amp;", "&gt;", "&lt;", "&uacute;", "&ntilde;", "&iacute;", "&rdquo;", "&diams;"];

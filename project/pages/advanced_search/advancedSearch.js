@@ -17,53 +17,142 @@ window.onload = function () {
         yield resetAnchor();
     });
 };
+const exhaustedTags = new Set();
+let topTagsList = [];
+const topTagsSet = new Set();
+const maxTopTags = 100;
+let searching = false;
 const literalSearchEle = smartGetElement("literalSearch", HTMLInputElement);
-const amtPostsEle = smartGetElement("amtPosts", HTMLInputElement);
 const sortForEle = smartGetElement("sortFor", HTMLInputElement);
 const searchButtonEle = smartGetElement("searchButton", HTMLButtonElement);
+const stopSearchButtonEle = smartGetElement("stopSearchButton", HTMLButtonElement);
+stopSearchButtonEle.addEventListener("click", function () { searching = false; });
 searchButtonEle.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
+        exhaustedTags.clear();
+        topTagsList = [];
+        topTagsSet.clear();
         const ttrb = sortForEle.value;
         const literalSearchPrompt = literalSearchEle.value;
         const comTtrb = getCommonness(ttrb);
-        if (amtPostsEle.value === "") {
-            amtPostsEle.value = `${100}`;
-        }
-        const amtPostsNum = Number(amtPostsEle.value);
-        const postsToRate = yield getPosts(literalSearchPrompt, amtPostsNum, {});
-        const postRatingPromisesById = new Map();
-        for (const post of postsToRate) {
-            postRatingPromisesById.set(post.id, ratePost(post));
-        }
-        const postRatingsById = new Map();
-        for (const post of postsToRate) {
-            postRatingsById.set(post.id, yield postRatingPromisesById.get(post.id));
-        }
-        postsToRate.sort(function (a, b) {
-            return postRatingsById.get(b.id) - postRatingsById.get(a.id);
-        });
-        pdArray.posts = postsToRate;
-        pdArray.display();
-        function ratePost(post) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const tagRatingIngredients = [];
-                for (const ttr of post.tags.values()) {
-                    tagRatingIngredients.push({
-                        amtTtrWithTtrb: PromptCountFC.call(`${ttr} ${ttrb}`),
-                        amtTtr: PromptCountFC.call(`${ttr}`)
-                    });
+        const ratedPostsById = new Map();
+        const ratingsById = new Map();
+        const ratedPostsOrdered = [];
+        searching = true;
+        while (searching) {
+            let tagCurrentlySearching = null;
+            if (topTagsList.length > 0) {
+                console.log(topTagsList[0].tag, topTagsList[0].rating);
+                tagCurrentlySearching = topTagsList[0].tag;
+            }
+            const searchPrompt = `${literalSearchPrompt} ${(tagCurrentlySearching) ? tagCurrentlySearching : ""}`;
+            const postsToRate = yield getPosts(searchPrompt, 1000, {});
+            const postRatingPromises = [];
+            for (const post of postsToRate) {
+                if (ratedPostsById.has(post.id)) {
+                    continue;
                 }
-                //take geometric mean of commonness of ttrb within ttr divided by the overrall commonness of ttrb. That way if a tag is saying "meh ttrb is about as common here as anywhere" it will have little effect on the average.
-                let sumOfLogs = 0;
-                for (const obj of tagRatingIngredients) {
-                    const comTtrbWithinTtr = ((yield obj.amtTtrWithTtrb) + 1) / ((yield obj.amtTtr) + 1);
-                    sumOfLogs += Math.log10(comTtrbWithinTtr / (yield comTtrb));
+                postRatingPromises.push({
+                    post: post,
+                    ratingPromise: ratePost(post, ttrb, yield comTtrb)
+                });
+                if (postRatingPromises.length >= 10) {
+                    break;
                 }
-                const rating = Math.pow(10, sumOfLogs / post.tags.size);
-                console.log(`rating of ${rating}: ${post.siteUrl}`);
-                return rating;
+            }
+            if (postRatingPromises.length < 10) {
+                if (!tagCurrentlySearching) {
+                    console.log("reached end of literal search");
+                    searching = false;
+                }
+                else {
+                    exhaustedTags.add(tagCurrentlySearching);
+                    topTagsList.splice(0, 1);
+                }
+            }
+            for (const { post, ratingPromise } of postRatingPromises) {
+                ratedPostsById.set(post.id, post);
+                ratingsById.set(post.id, yield ratingPromise);
+                ratedPostsOrdered.push(post);
+            }
+            ratedPostsOrdered.sort(function (a, b) {
+                return ratingsById.get(b.id) - ratingsById.get(a.id);
             });
+            pdArray.posts = ratedPostsOrdered;
+            pdArray.display();
         }
+        // const postRatingPromisesById: Map<number, Promise<number>> = new Map()
+        // for (const post of postsToRate) {
+        //     postRatingPromisesById.set(post.id, ratePost(post, ttrb, await comTtrb))
+        // }
+        // const postRatingsById: Map<number, number> = new Map()
+        // for (const post of postsToRate) {
+        //     postRatingsById.set(post.id, await postRatingPromisesById.get(post.id)!)
+        // }
+        // postsToRate.sort(function (a, b) {
+        //     return postRatingsById.get(b.id)! - postRatingsById.get(a.id)!
+        // })
+        // pdArray.posts = postsToRate
+        // pdArray.display()
     });
 });
+// searchButtonEle.addEventListener("click", async function () {
+//     const ttrb = sortForEle.value
+//     const literalSearchPrompt = literalSearchEle.value
+//     const comTtrb = getCommonness(ttrb)
+//     if (amtPostsEle.value === "") {
+//         amtPostsEle.value = `${100}`
+//     }
+//     const amtPostsNum = Number(amtPostsEle.value)
+//     const postsToRate = await getPosts(literalSearchPrompt, amtPostsNum, {})
+//     const postRatingPromisesById: Map<number, Promise<number>> = new Map()
+//     for (const post of postsToRate) {
+//         postRatingPromisesById.set(post.id, ratePost(post, ttrb, await comTtrb))
+//     }
+//     const postRatingsById: Map<number, number> = new Map()
+//     for (const post of postsToRate) {
+//         postRatingsById.set(post.id, await postRatingPromisesById.get(post.id)!)
+//     }
+//     postsToRate.sort(function (a, b) {
+//         return postRatingsById.get(b.id)! - postRatingsById.get(a.id)!
+//     })
+//     pdArray.posts = postsToRate
+//     pdArray.display()
+// })
 const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {});
+function rateTag(ttr, ttrb) {
+    return __awaiter(this, void 0, void 0, function* () {
+        //returns the implied probability of ttrb given ttr. NOT RELATIVE TO COMTTRB
+        const amtTtrWithTtrb = PromptCountFC.call(`${ttr} ${ttrb}`);
+        const amtTtr = PromptCountFC.call(`${ttr}`);
+        const rating = ((yield amtTtrWithTtrb) + 1) / ((yield amtTtr) + 1);
+        //add ttr to top tags
+        if (ttr !== ttrb && !topTagsSet.has(ttr) && (yield amtTtrWithTtrb) > 0 && (topTagsList.length < maxTopTags || rating > topTagsList[topTagsList.length - 1].rating)) {
+            topTagsSet.add(ttr);
+            topTagsList.push({
+                tag: ttr,
+                rating: rating
+            });
+            topTagsList.sort(function (a, b) {
+                return b.rating - a.rating;
+            });
+            topTagsList = topTagsList.slice(0, maxTopTags);
+        }
+        return rating;
+    });
+}
+function ratePost(postToRate, ttrb, comTtrb) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const tagRatingPromises = [];
+        for (const tag of postToRate.tags.values()) {
+            tagRatingPromises.push(rateTag(tag, ttrb));
+        }
+        const tagRatings = yield Promise.all(tagRatingPromises);
+        let sumOfLogs = 0;
+        for (const rating of tagRatings) {
+            sumOfLogs += Math.log10(rating / comTtrb);
+        }
+        const avgLogs = sumOfLogs / postToRate.tags.size;
+        return avgLogs;
+    });
+}

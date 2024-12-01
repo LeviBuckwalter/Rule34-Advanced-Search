@@ -7,10 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Census } from "../../R34-Tools/src/classes/Census.js";
-import { SortedSample } from "../../R34-Tools/src/classes/SortedSample.js";
-import { getCommonness, getPosts } from "../../R34-Tools/src/functions/general_functions/end_user.js";
-export class l2TagRaterV2 {
+import { Census } from "../../../R34-Tools/src/classes/Census.js";
+import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
+import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+export class l2TagRater {
     constructor(ttrb) {
         this.ttrb = ttrb;
         this.initialized = false;

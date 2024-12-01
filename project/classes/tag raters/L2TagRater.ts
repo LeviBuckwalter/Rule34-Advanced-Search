@@ -1,9 +1,9 @@
-import { Census } from "../../R34-Tools/src/classes/Census.js";
-import { Post } from "../../R34-Tools/src/classes/Post.js";
-import { SortedSample } from "../../R34-Tools/src/classes/SortedSample.js";
-import { getCommonness, getPosts } from "../../R34-Tools/src/functions/general_functions/end_user.js";
+import { Census } from "../../../R34-Tools/src/classes/Census.js";
+import { Post } from "../../../R34-Tools/src/classes/Post.js";
+import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
+import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 
-export class l2TagRaterV2 {
+export class l2TagRater {
     ttrb: string
     tagData: { [tag: string]: { census: Census, com: number } } | undefined
     l1TagList: string[] | undefined

@@ -1,8 +1,7 @@
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { Post } from "../../../R34-Tools/src/classes/Post.js";
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
-import { l2TagRater } from "../../classes/L2TagRater.js";
-import { l2TagRaterV2 } from "../../classes/L2TagRaterV2.js";
+import { l2TagRater } from "../../classes/tag raters/L2TagRater.js";
 import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 
 const ttrbEle = smartGetElement("ttrb", HTMLInputElement)
@@ -14,14 +13,14 @@ const batchSizeEle = smartGetElement("batchSize", HTMLInputElement)
 const fetchBatchEle = smartGetElement("fetchBatch", HTMLButtonElement)
 const searchResultsEle = smartGetElement("searchResults", HTMLSpanElement)
 
-let tagRater: undefined | l2TagRaterV2
+let tagRater: undefined | l2TagRater
 const idsOfRatedPosts: Set<number> = new Set()
 const idToRating: Map<number, number> = new Map()
 const idToPost: Map<number, Post> = new Map()
 
 //create rater button
 createRaterEle.addEventListener("click", async function () {
-    tagRater = new l2TagRaterV2(ttrbEle.value)
+    tagRater = new l2TagRater(ttrbEle.value)
     tagRater.init()
 })
 //check rater initialization button

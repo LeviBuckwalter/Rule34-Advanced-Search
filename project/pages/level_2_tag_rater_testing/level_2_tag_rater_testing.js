@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { l2TagRaterV2 } from "../../classes/L2TagRaterV2.js";
+import { l2TagRater } from "../../classes/tag raters/L2TagRater.js";
 import { roundTo } from "../../functions/general_functions.js";
 import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 const tagToRateByEle = smartGetElement("tagToRateBy", HTMLInputElement);
@@ -24,7 +24,7 @@ createRaterButtonEle.addEventListener("click", function () {
         ttrb = tagToRateByEle.value;
         const ttrCensusSize = (ttrCensusSizeEle.value === "") ? undefined : Number(ttrCensusSizeEle.value);
         const formulaFirstTerm = formulaFirstTermEle.checked;
-        tagRater = new l2TagRaterV2(ttrb);
+        tagRater = new l2TagRater(ttrb);
         tagRater.init();
         console.log(tagRater.initialized);
     });

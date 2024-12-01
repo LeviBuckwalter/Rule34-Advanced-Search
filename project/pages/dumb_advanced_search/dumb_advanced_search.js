@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
-import { l2TagRaterV2 } from "../../classes/L2TagRaterV2.js";
+import { l2TagRater } from "../../classes/tag raters/L2TagRater.js";
 import { smartEl, smartGetElement, toHtml } from "../../functions/html_functions.js";
 const ttrbEle = smartGetElement("ttrb", HTMLInputElement);
 const createRaterEle = smartGetElement("createRater", HTMLButtonElement);
@@ -26,7 +26,7 @@ const idToPost = new Map();
 //create rater button
 createRaterEle.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
-        tagRater = new l2TagRaterV2(ttrbEle.value);
+        tagRater = new l2TagRater(ttrbEle.value);
         tagRater.init();
     });
 });
