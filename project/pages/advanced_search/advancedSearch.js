@@ -33,6 +33,7 @@ const searchTextDispEle = smartGetElement("searchTextDisp", HTMLSpanElement);
 stopSearchButtonEle.addEventListener("click", function () { searching = false; });
 searchButtonEle.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
+        searchTextDispEle.textContent = `Beginning search...`;
         exhaustedTags.clear();
         topTagsList = [];
         topTagsSet.clear();

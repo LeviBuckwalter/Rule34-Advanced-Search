@@ -30,6 +30,8 @@ const stopSearchButtonEle = smartGetElement("stopSearchButton", HTMLButtonElemen
 const searchTextDispEle = smartGetElement("searchTextDisp", HTMLSpanElement)
 stopSearchButtonEle.addEventListener("click", function () { searching = false })
 searchButtonEle.addEventListener("click", async function () {
+    searchTextDispEle.textContent = `Beginning search...`
+
     exhaustedTags.clear()
     topTagsList = []
     topTagsSet.clear()
