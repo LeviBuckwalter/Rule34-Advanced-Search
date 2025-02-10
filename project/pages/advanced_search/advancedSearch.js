@@ -49,7 +49,7 @@ searchButtonEle.addEventListener("click", function () {
         while (searching) {
             let tagCurrentlySearching = null;
             if (topTagsList.length > 0) {
-                searchTextDispEle.textContent = `Searching "${topTagsList[0].tag}" (rating: ${roundTo(topTagsList[0].rating, 2)})`;
+                searchTextDispEle.textContent = `Searching "${topTagsList[0].tag}" (rating: ${roundTo(Math.log10(topTagsList[0].rating), 2)})`;
                 console.log(topTagsList[0].tag, topTagsList[0].rating);
                 tagCurrentlySearching = topTagsList[0].tag;
             }

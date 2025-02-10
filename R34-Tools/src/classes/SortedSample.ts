@@ -70,4 +70,8 @@ export class SortedSample {
         })
         return tagAmts.slice(0, amtTags)
     }
+
+    public postById(id: number): Post | undefined {
+        return this.postByPostId.get(id)
+    }
 }

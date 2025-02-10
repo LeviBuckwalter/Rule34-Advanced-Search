@@ -62,4 +62,7 @@ export class SortedSample {
         });
         return tagAmts.slice(0, amtTags);
     }
+    postById(id) {
+        return this.postByPostId.get(id);
+    }
 }

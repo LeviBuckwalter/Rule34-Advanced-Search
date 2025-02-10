@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../../style.css">
+    <title>Mass Sort</title>
+</head>
+
+<body>
+    <main>
+        <h1>Mass Sort</h1>
+        <div>
+            <a href="../../../index.html">Home Page</a>
+        </div>
+        <section>
+            <div>
+                <label for="literalSearch">Literal search</label>
+                <input type="text" id="literalSearch">
+                <span id="litSearchCountDisp"></span>
+            </div>
+            <div>
+                <label for="tagToRateBy">Sort by</label>
+                <input type="text" id="tagToRateBy">
+                <!-- <span id="sortForCountDisp"></span> -->
+            </div>
+            <div>
+                <button id="initButton">Initialize</button>
+            </div>
+            <div>
+                <button id="goButton" class="danger-btn">Go</button>
+            </div>
+        </section>
+        <section class="wide-content">
+            <span id="postDisplay"></span>
+        </section>
+    </main>
+</body>
+
+<script type="module" async="true" src="./mass_sort.js"></script>
+
+</html>

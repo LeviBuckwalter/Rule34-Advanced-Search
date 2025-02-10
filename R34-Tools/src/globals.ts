@@ -1,1 +1,3 @@
-export const problemStrs: string[] = ["&eacute;", "&#039;", "+", "&amp;", "&gt;", "&lt;", "&uacute;", "&ntilde;", "&iacute;", "&rdquo;", "&diams;"]
+//the full list of these html entities is here: https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references. But the list is really long, so I'm dubious about adding them all to problemStrs...
+
+export const problemStrs: string[] = [";"]//["&hellip;", "&eacute;", "&#039;", "+", "&amp;", "&gt;", "&lt;", "&uacute;", "&ntilde;", "&iacute;", "&rdquo;", "&diams;"]
