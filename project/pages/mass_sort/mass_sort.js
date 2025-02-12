@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
 import { PromptCountFC } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js";
-import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { instantiateElements } from "../../functions/html_functions.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
 import { Census } from "../../../R34-Tools/src/classes/Census.js";
@@ -19,31 +18,65 @@ const htmlEles = instantiateElements({
     tagToRateBy: HTMLInputElement,
     initButton: HTMLButtonElement,
     goButton: HTMLButtonElement,
-    postDisplay: HTMLSpanElement
+    postDisplay: HTMLSpanElement,
+    pendingStepsDisplay: HTMLSpanElement,
+    amtStepsInput: HTMLInputElement,
+    modeSelect: HTMLSelectElement,
+    poolSizeInput: HTMLInputElement,
+    initStatusDisplay: HTMLSpanElement
 });
-window.onload = function () {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield resetAnchor();
-    });
-};
+// window.onload = async function () {
+//     await resetAnchor()
+// }
 htmlEles.initButton.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
+        htmlEles.initStatusDisplay.textContent = "Initializing...";
+        const poolSize = (htmlEles.poolSizeInput.value !== "") ? Number(htmlEles.poolSizeInput.value) : 10000;
         const literalSearch = htmlEles.literalSearch.value;
         const ttrb = htmlEles.tagToRateBy.value;
         const ttrbCount = PromptCountFC.call(ttrb);
-        const posts = yield getPosts(literalSearch, 10000, { lookInCache: false, storeInCache: false });
+        const posts = yield getPosts(literalSearch, poolSize, { lookInCache: false, storeInCache: false });
         poolSortedSample = new SortedSample(posts);
         for (const post of posts) {
             poolPostIdArray.push(post.id);
             poolPostRatings.set(post.id, 0);
         }
         if ((yield ttrbCount) < 10000) {
-            ttrbCensus = new Census(yield getPosts(ttrb, 10000, {}));
+            ttrbCensus = new Census(yield getPosts(ttrb, 10000, { lookInCache: false, storeInCache: false }));
         }
-        console.log("init finished");
+        htmlEles.initStatusDisplay.textContent = "Initialization finished";
     });
 });
 htmlEles.goButton.addEventListener("click", function () {
+    return __awaiter(this, void 0, void 0, function* () {
+        const amtSteps = (htmlEles.amtStepsInput.value !== "") ? Number(htmlEles.amtStepsInput.value) : 1;
+        pendingRatings += amtSteps;
+        htmlEles.pendingStepsDisplay.textContent = `${pendingRatings}`;
+        if (!stepping) {
+            stepping = true;
+            while (pendingRatings > 0) {
+                yield step();
+                pendingRatings--;
+                htmlEles.pendingStepsDisplay.textContent = `${pendingRatings}`;
+            }
+            stepping = false;
+        }
+    });
+});
+let poolSortedSample = undefined;
+const poolPostRatings = new Map(); //maps post id to rating
+const poolPostIdArray = [];
+const l2RatingBank = new Map();
+let ttrbCensus = undefined;
+const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {});
+let pendingRatings = 0;
+let stepping = false;
+function sortPool() {
+    poolPostIdArray.sort(function (a, b) {
+        return poolPostRatings.get(b) - poolPostRatings.get(a);
+    });
+}
+function step() {
     return __awaiter(this, void 0, void 0, function* () {
         const ttrb = htmlEles.tagToRateBy.value;
         if (!poolSortedSample) {
@@ -74,17 +107,6 @@ htmlEles.goButton.addEventListener("click", function () {
         // console.log(topPostsStr)
         // console.log(`newTag: ${newTag}, rating: ${newTagRating}`)
     });
-});
-let poolSortedSample = undefined;
-const poolPostRatings = new Map(); //maps post id to rating
-const poolPostIdArray = [];
-const l2RatingBank = new Map();
-let ttrbCensus = undefined;
-const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {});
-function sortPool() {
-    poolPostIdArray.sort(function (a, b) {
-        return poolPostRatings.get(b) - poolPostRatings.get(a);
-    });
 }
 function rateNextTag(ttrb) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -97,15 +119,34 @@ function rateNextTag(ttrb) {
         if (l2RatingBank.has(tagToRate)) {
             throw new Error("the rating bank already has this tag");
         }
-        const rating = yield rateTagL2(tagToRate, ttrb, 100);
-        return {
-            tag: tagToRate,
-            rating: rating
-        };
+        if (htmlEles.modeSelect.value === "l1") {
+            const probTtrbGivenTtr = yield rateTagL1(tagToRate, ttrb);
+            const probTtrb = yield getCommonness(ttrb);
+            const rating = (probTtrbGivenTtr === undefined) ? 0 : Math.log10(probTtrbGivenTtr / probTtrb);
+            console.log(`"${tagToRate}": ${rating}`);
+            return {
+                tag: tagToRate,
+                rating: rating
+            };
+        }
+        else if (htmlEles.modeSelect.value === "l2") {
+            const rating = yield rateTagL2(tagToRate, ttrb, 100);
+            console.log(`"${tagToRate}": ${rating}`);
+            return {
+                tag: tagToRate,
+                rating: rating
+            };
+        }
+        else {
+            throw new Error("Mode is not l1 or l2");
+        }
     });
 }
 function rateTagL1(ttr, ttrb) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (`${ttr}` === `${ttrb}`) {
+            return undefined;
+        }
         let amtPostsTtrTtrb = undefined;
         if (ttrbCensus) {
             amtPostsTtrTtrb = ttrbCensus.count(ttr);
@@ -121,23 +162,22 @@ function rateTagL1(ttr, ttrb) {
 }
 function ratePostL1(postToRate, ttrb) {
     return __awaiter(this, void 0, void 0, function* () {
-        const rand = false; //(Math.random() > 0.99) ? true : false
         const tagRatingPromises = [];
         for (const tag of postToRate.tags.values()) {
-            if (rand) {
-                console.log(tag);
-            }
             tagRatingPromises.push(rateTagL1(tag, ttrb));
         }
         const tagRatings = yield Promise.all(tagRatingPromises);
         const comTtrb = yield getCommonness(ttrb);
         let sumOfLogs = 0;
         for (const tagRating of tagRatings) {
-            const relativeProb = tagRating / comTtrb;
-            if (rand) {
-                console.log(relativeProb);
+            if (tagRating === undefined) {
+                //meaning ttr === ttrb
+                sumOfLogs += 0;
             }
-            sumOfLogs += Math.log10(relativeProb);
+            else {
+                const relativeProb = tagRating / comTtrb;
+                sumOfLogs += Math.log10(relativeProb);
+            }
         }
         const avgLogRating = sumOfLogs / tagRatings.length;
         return avgLogRating;
@@ -145,7 +185,7 @@ function ratePostL1(postToRate, ttrb) {
 }
 function rateTagL2(ttr, ttrb, amtSample) {
     return __awaiter(this, void 0, void 0, function* () {
-        const sample = yield getPosts(ttr, amtSample, {});
+        const sample = yield getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false });
         const postRatingPromises = [];
         for (const post of sample) {
             postRatingPromises.push(ratePostL1(post, ttrb));

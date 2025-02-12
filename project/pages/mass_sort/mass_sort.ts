@@ -14,19 +14,27 @@ const htmlEles = instantiateElements({
     tagToRateBy: HTMLInputElement,
     initButton: HTMLButtonElement,
     goButton: HTMLButtonElement,
-    postDisplay: HTMLSpanElement
+    postDisplay: HTMLSpanElement,
+    pendingStepsDisplay: HTMLSpanElement,
+    amtStepsInput: HTMLInputElement,
+    modeSelect: HTMLSelectElement,
+    poolSizeInput: HTMLInputElement,
+    initStatusDisplay: HTMLSpanElement
 })
 
 
-window.onload = async function () {
-    await resetAnchor()
-}
+// window.onload = async function () {
+//     await resetAnchor()
+// }
 
 htmlEles.initButton.addEventListener("click", async function () {
+    htmlEles.initStatusDisplay.textContent = "Initializing..."
+
+    const poolSize = (htmlEles.poolSizeInput.value !== "") ? Number(htmlEles.poolSizeInput.value) : 10000
     const literalSearch = htmlEles.literalSearch.value
     const ttrb = htmlEles.tagToRateBy.value
     const ttrbCount = PromptCountFC.call(ttrb)
-    const posts = await getPosts(literalSearch, 10000, { lookInCache: false, storeInCache: false })
+    const posts = await getPosts(literalSearch, poolSize, { lookInCache: false, storeInCache: false })
     poolSortedSample = new SortedSample(posts)
     for (const post of posts) {
         poolPostIdArray.push(post.id)
@@ -34,13 +42,44 @@ htmlEles.initButton.addEventListener("click", async function () {
     }
 
     if (await ttrbCount < 10000) {
-        ttrbCensus = new Census(await getPosts(ttrb, 10000, {}))
+        ttrbCensus = new Census(await getPosts(ttrb, 10000, { lookInCache: false, storeInCache: false }))
     }
 
-    console.log("init finished")
+    htmlEles.initStatusDisplay.textContent = "Initialization finished"
 })
 
 htmlEles.goButton.addEventListener("click", async function () {
+    const amtSteps = (htmlEles.amtStepsInput.value !== "") ? Number(htmlEles.amtStepsInput.value) : 1
+    pendingRatings += amtSteps
+    htmlEles.pendingStepsDisplay.textContent = `${pendingRatings}`
+    if (!stepping) {
+        stepping = true
+        while (pendingRatings > 0) {
+            await step()
+            pendingRatings--
+            htmlEles.pendingStepsDisplay.textContent = `${pendingRatings}`
+        }
+        stepping = false
+    }
+})
+
+let poolSortedSample: undefined | SortedSample = undefined
+const poolPostRatings: Map<number, number> = new Map() //maps post id to rating
+const poolPostIdArray: number[] = []
+const l2RatingBank: Map<string, number> = new Map()
+let ttrbCensus: Census | undefined = undefined
+const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {})
+let pendingRatings = 0
+let stepping = false
+
+
+function sortPool() {
+    poolPostIdArray.sort(function (a, b) {
+        return poolPostRatings.get(b)! - poolPostRatings.get(a)!
+    })
+}
+
+async function step() {
     const ttrb = htmlEles.tagToRateBy.value
 
     if (!poolSortedSample) { throw new Error("the pool needs to be initiated") }
@@ -70,20 +109,6 @@ htmlEles.goButton.addEventListener("click", async function () {
     // }
     // console.log(topPostsStr)
     // console.log(`newTag: ${newTag}, rating: ${newTagRating}`)
-})
-
-let poolSortedSample: undefined | SortedSample = undefined
-const poolPostRatings: Map<number, number> = new Map() //maps post id to rating
-const poolPostIdArray: number[] = []
-const l2RatingBank: Map<string, number> = new Map()
-let ttrbCensus: Census | undefined = undefined
-const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {})
-
-
-function sortPool() {
-    poolPostIdArray.sort(function (a, b) {
-        return poolPostRatings.get(b)! - poolPostRatings.get(a)!
-    })
 }
 
 async function rateNextTag(ttrb: string): Promise<{ tag: string, rating: number }> {
@@ -92,15 +117,32 @@ async function rateNextTag(ttrb: string): Promise<{ tag: string, rating: number 
     const topTags = poolSortedSample.topTags(l2RatingBank.size + 1)
     const tagToRate: string = topTags[topTags.length - 1].tag
     if (l2RatingBank.has(tagToRate)) { throw new Error("the rating bank already has this tag") }
-    const rating = await rateTagL2(tagToRate, ttrb, 100)
-    return {
-        tag: tagToRate,
-        rating: rating
+    if (htmlEles.modeSelect.value === "l1") {
+        const probTtrbGivenTtr = await rateTagL1(tagToRate, ttrb)
+        const probTtrb = await getCommonness(ttrb)
+        const rating = (probTtrbGivenTtr === undefined) ? 0 : Math.log10(probTtrbGivenTtr / probTtrb)
+        console.log(`"${tagToRate}": ${rating}`)
+        return {
+            tag: tagToRate,
+            rating: rating
+        }
+    } else if (htmlEles.modeSelect.value === "l2") {
+        const rating = await rateTagL2(tagToRate, ttrb, 100)
+        console.log(`"${tagToRate}": ${rating}`)
+        return {
+            tag: tagToRate,
+            rating: rating
+        }
+    } else {
+        throw new Error("Mode is not l1 or l2")
     }
 }
 
 
-async function rateTagL1(ttr: string, ttrb: string) {
+async function rateTagL1(ttr: string, ttrb: string): Promise<number | undefined> {
+    if (`${ttr}` === `${ttrb}`) {
+        return undefined
+    }
     let amtPostsTtrTtrb: Promise<number> | number | undefined = undefined
     if (ttrbCensus) {
         amtPostsTtrTtrb = ttrbCensus.count(ttr)
@@ -115,28 +157,28 @@ async function rateTagL1(ttr: string, ttrb: string) {
 }
 
 async function ratePostL1(postToRate: Post, ttrb: string) {
-    const rand = false//(Math.random() > 0.99) ? true : false
-
-
-    const tagRatingPromises: Promise<number>[] = []
+    const tagRatingPromises: Promise<number | undefined>[] = []
     for (const tag of postToRate.tags.values()) {
-        if (rand) { console.log(tag) }
         tagRatingPromises.push(rateTagL1(tag, ttrb))
     }
-    const tagRatings: number[] = await Promise.all(tagRatingPromises)
+    const tagRatings: Array<number | undefined> = await Promise.all(tagRatingPromises)
     const comTtrb = await getCommonness(ttrb)
     let sumOfLogs = 0
     for (const tagRating of tagRatings) {
-        const relativeProb = tagRating / comTtrb
-        if (rand) { console.log(relativeProb) }
-        sumOfLogs += Math.log10(relativeProb)
+        if (tagRating === undefined) {
+            //meaning ttr === ttrb
+            sumOfLogs += 0
+        } else {
+            const relativeProb = tagRating / comTtrb
+            sumOfLogs += Math.log10(relativeProb)
+        }
     }
     const avgLogRating = sumOfLogs / tagRatings.length
     return avgLogRating
 }
 
 async function rateTagL2(ttr: string, ttrb: string, amtSample: number) {
-    const sample = await getPosts(ttr, amtSample, {})
+    const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
     const postRatingPromises: Promise<number>[] = []
     for (const post of sample) {
         postRatingPromises.push(ratePostL1(post, ttrb))

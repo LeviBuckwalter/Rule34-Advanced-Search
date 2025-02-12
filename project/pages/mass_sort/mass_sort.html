@@ -14,6 +14,17 @@
         </div>
         <section>
             <div>
+                <label for="modeSelect">Select post rating mode:</label>
+                <select id="modeSelect">
+                    <option value="l1">Level 1</option>
+                    <option value="l2">Level 2</option>
+                </select>
+            </div>
+            <div>
+                <label for="poolSizeInput">Pool size:</label>
+                <input type="text" id="poolSizeInput">
+            </div>
+            <div>
                 <label for="literalSearch">Literal search</label>
                 <input type="text" id="literalSearch">
                 <span id="litSearchCountDisp"></span>
@@ -25,9 +36,13 @@
             </div>
             <div>
                 <button id="initButton">Initialize</button>
+                <span id="initStatusDisplay">Not yet initialized</span>
             </div>
             <div>
                 <button id="goButton" class="danger-btn">Go</button>
+                <span>multiplied by</span>
+                <input type="text" id="amtStepsInput">
+                <span id="pendingStepsDisplay"></span>
             </div>
         </section>
         <section class="wide-content">
