@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
+import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
 import { PromptCountFC } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js";
 import { instantiateElements } from "../../functions/html_functions.js";
@@ -23,24 +23,26 @@ const htmlEles = instantiateElements({
     amtStepsInput: HTMLInputElement,
     modeSelect: HTMLSelectElement,
     poolSizeInput: HTMLInputElement,
-    initStatusDisplay: HTMLSpanElement
+    initStatusDisplay: HTMLSpanElement,
+    bufferSelect: HTMLSelectElement
 });
-// window.onload = async function () {
-//     await resetAnchor()
-// }
+//INITIALIZATION
 htmlEles.initButton.addEventListener("click", function () {
     return __awaiter(this, void 0, void 0, function* () {
         htmlEles.initStatusDisplay.textContent = "Initializing...";
+        //initialize poolSortedSample
         const poolSize = (htmlEles.poolSizeInput.value !== "") ? Number(htmlEles.poolSizeInput.value) : 10000;
         const literalSearch = htmlEles.literalSearch.value;
         const ttrb = htmlEles.tagToRateBy.value;
         const ttrbCount = PromptCountFC.call(ttrb);
         const posts = yield getPosts(literalSearch, poolSize, { lookInCache: false, storeInCache: false });
         poolSortedSample = new SortedSample(posts);
+        //initialize poolPostIdArray and poolPostRatings
         for (const post of posts) {
             poolPostIdArray.push(post.id);
             poolPostRatings.set(post.id, 0);
         }
+        //initialize ttrbCensus
         if ((yield ttrbCount) < 10000) {
             ttrbCensus = new Census(yield getPosts(ttrb, 10000, { lookInCache: false, storeInCache: false }));
         }
@@ -63,11 +65,11 @@ htmlEles.goButton.addEventListener("click", function () {
         }
     });
 });
-let poolSortedSample = undefined;
+let poolSortedSample;
 const poolPostRatings = new Map(); //maps post id to rating
 const poolPostIdArray = [];
 const l2RatingBank = new Map();
-let ttrbCensus = undefined;
+let ttrbCensus;
 const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {});
 let pendingRatings = 0;
 let stepping = false;
@@ -120,13 +122,11 @@ function rateNextTag(ttrb) {
             throw new Error("the rating bank already has this tag");
         }
         if (htmlEles.modeSelect.value === "l1") {
-            const probTtrbGivenTtr = yield rateTagL1(tagToRate, ttrb);
-            const probTtrb = yield getCommonness(ttrb);
-            const rating = (probTtrbGivenTtr === undefined) ? 0 : Math.log10(probTtrbGivenTtr / probTtrb);
+            const rating = yield rateTagL1(tagToRate, ttrb);
             console.log(`"${tagToRate}": ${rating}`);
             return {
                 tag: tagToRate,
-                rating: rating
+                rating: (rating) ? rating : 0 //in case rating is undefined, meaning ttr === ttrb
             };
         }
         else if (htmlEles.modeSelect.value === "l2") {
@@ -144,20 +144,39 @@ function rateNextTag(ttrb) {
 }
 function rateTagL1(ttr, ttrb) {
     return __awaiter(this, void 0, void 0, function* () {
+        //outputs log of relative prob
         if (`${ttr}` === `${ttrb}`) {
             return undefined;
         }
-        let amtPostsTtrTtrb = undefined;
+        const amtTtrb = PromptCountFC.call(ttrb);
+        const amtAll = PromptCountFC.call("");
+        const amtTtr = PromptCountFC.call(ttr);
+        let amtTtrTtrb;
         if (ttrbCensus) {
-            amtPostsTtrTtrb = ttrbCensus.count(ttr);
+            amtTtrTtrb = ttrbCensus.count(ttr); //assumes a complete census of ttrb
         }
         else {
-            amtPostsTtrTtrb = PromptCountFC.call(`${ttr} ${ttrb}`);
+            amtTtrTtrb = PromptCountFC.call(`${ttr} ${ttrb}`);
         }
-        const amtPostsTtr = PromptCountFC.call(ttr);
-        const pTtrbGivenTtr = ((yield amtPostsTtrTtrb) + 1) / ((yield amtPostsTtr) + 2);
-        // if (Math.random() > 0.99) { console.log(ttr, pTtrbGivenTtr) }
-        return pTtrbGivenTtr;
+        let bufferType;
+        if (htmlEles.bufferSelect.value === "plusOne") {
+            bufferType = "plusOne";
+        }
+        else if (htmlEles.bufferSelect.value === "relative") {
+            bufferType = "relative";
+        }
+        else {
+            throw new Error("buffer type is neither plusOne nor relative");
+        }
+        const bufferedProbTtrbGivenTtr = ((yield amtTtrTtrb) + ((bufferType === "plusOne") ? 1 : yield amtTtrb)) / ((yield amtTtr) + ((bufferType === "plusOne") ? 2 : yield amtAll));
+        const comTtrb = (yield amtTtrb) / (yield amtAll);
+        const relProb = bufferedProbTtrbGivenTtr / comTtrb;
+        const logRelProb = Math.log10(relProb);
+        // console.log(`bufferedProbTtrbGivenTtr: ${bufferedProbTtrbGivenTtr}`)
+        // console.log(`comTtrb: ${comTtrb}`)
+        // console.log(`relProb: ${relProb}`)
+        // console.log(`logRelProb: ${logRelProb}`)
+        return logRelProb;
     });
 }
 function ratePostL1(postToRate, ttrb) {
@@ -167,7 +186,6 @@ function ratePostL1(postToRate, ttrb) {
             tagRatingPromises.push(rateTagL1(tag, ttrb));
         }
         const tagRatings = yield Promise.all(tagRatingPromises);
-        const comTtrb = yield getCommonness(ttrb);
         let sumOfLogs = 0;
         for (const tagRating of tagRatings) {
             if (tagRating === undefined) {
@@ -175,8 +193,7 @@ function ratePostL1(postToRate, ttrb) {
                 sumOfLogs += 0;
             }
             else {
-                const relativeProb = tagRating / comTtrb;
-                sumOfLogs += Math.log10(relativeProb);
+                sumOfLogs += tagRating;
             }
         }
         const avgLogRating = sumOfLogs / tagRatings.length;
@@ -185,7 +202,12 @@ function ratePostL1(postToRate, ttrb) {
 }
 function rateTagL2(ttr, ttrb, amtSample) {
     return __awaiter(this, void 0, void 0, function* () {
-        const sample = yield getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false });
+        if (!poolSortedSample) {
+            throw new Error("rateTagL2 was called before initialization");
+        }
+        //const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
+        const postsTtr = poolSortedSample.fetchPosts(ttr);
+        const sample = (postsTtr.length > 100) ? postsTtr.slice(0, 100) : postsTtr;
         const postRatingPromises = [];
         for (const post of sample) {
             postRatingPromises.push(ratePostL1(post, ttrb));
@@ -194,6 +216,7 @@ function rateTagL2(ttr, ttrb, amtSample) {
         let sum = 0;
         for (const rating of postRatings) {
             sum += rating;
+            // console.log(rating)
         }
         const avgRating = sum / postRatings.length;
         return avgRating;

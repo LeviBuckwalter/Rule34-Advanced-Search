@@ -2,7 +2,6 @@ import { getCommonness, getPosts } from "../../../R34-Tools/src/functions/genera
 import { SortedSample } from "../../../R34-Tools/src/classes/SortedSample.js";
 import { PromptCountFC } from "../../../R34-Tools/src/caches/prompt_count_cache/PromptCount$.js";
 import { Post } from "../../../R34-Tools/src/classes/Post.js";
-import { resetAnchor } from "../../../R34-Tools/src/caches/post_caching/post_caching_functions.js";
 import { instantiateElements } from "../../functions/html_functions.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
 import { Census } from "../../../R34-Tools/src/classes/Census.js";
@@ -19,28 +18,30 @@ const htmlEles = instantiateElements({
     amtStepsInput: HTMLInputElement,
     modeSelect: HTMLSelectElement,
     poolSizeInput: HTMLInputElement,
-    initStatusDisplay: HTMLSpanElement
+    initStatusDisplay: HTMLSpanElement,
+    bufferSelect: HTMLSelectElement
 })
 
 
-// window.onload = async function () {
-//     await resetAnchor()
-// }
-
+//INITIALIZATION
 htmlEles.initButton.addEventListener("click", async function () {
     htmlEles.initStatusDisplay.textContent = "Initializing..."
 
+    //initialize poolSortedSample
     const poolSize = (htmlEles.poolSizeInput.value !== "") ? Number(htmlEles.poolSizeInput.value) : 10000
     const literalSearch = htmlEles.literalSearch.value
     const ttrb = htmlEles.tagToRateBy.value
     const ttrbCount = PromptCountFC.call(ttrb)
     const posts = await getPosts(literalSearch, poolSize, { lookInCache: false, storeInCache: false })
     poolSortedSample = new SortedSample(posts)
+
+    //initialize poolPostIdArray and poolPostRatings
     for (const post of posts) {
         poolPostIdArray.push(post.id)
         poolPostRatings.set(post.id, 0)
     }
 
+    //initialize ttrbCensus
     if (await ttrbCount < 10000) {
         ttrbCensus = new Census(await getPosts(ttrb, 10000, { lookInCache: false, storeInCache: false }))
     }
@@ -63,11 +64,11 @@ htmlEles.goButton.addEventListener("click", async function () {
     }
 })
 
-let poolSortedSample: undefined | SortedSample = undefined
+let poolSortedSample: undefined | SortedSample
 const poolPostRatings: Map<number, number> = new Map() //maps post id to rating
 const poolPostIdArray: number[] = []
 const l2RatingBank: Map<string, number> = new Map()
-let ttrbCensus: Census | undefined = undefined
+let ttrbCensus: Census | undefined
 const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {})
 let pendingRatings = 0
 let stepping = false
@@ -118,13 +119,11 @@ async function rateNextTag(ttrb: string): Promise<{ tag: string, rating: number 
     const tagToRate: string = topTags[topTags.length - 1].tag
     if (l2RatingBank.has(tagToRate)) { throw new Error("the rating bank already has this tag") }
     if (htmlEles.modeSelect.value === "l1") {
-        const probTtrbGivenTtr = await rateTagL1(tagToRate, ttrb)
-        const probTtrb = await getCommonness(ttrb)
-        const rating = (probTtrbGivenTtr === undefined) ? 0 : Math.log10(probTtrbGivenTtr / probTtrb)
+        const rating = await rateTagL1(tagToRate, ttrb)
         console.log(`"${tagToRate}": ${rating}`)
         return {
             tag: tagToRate,
-            rating: rating
+            rating: (rating) ? rating : 0//in case rating is undefined, meaning ttr === ttrb
         }
     } else if (htmlEles.modeSelect.value === "l2") {
         const rating = await rateTagL2(tagToRate, ttrb, 100)
@@ -140,20 +139,42 @@ async function rateNextTag(ttrb: string): Promise<{ tag: string, rating: number 
 
 
 async function rateTagL1(ttr: string, ttrb: string): Promise<number | undefined> {
+    //outputs log of relative prob
+
     if (`${ttr}` === `${ttrb}`) {
         return undefined
     }
-    let amtPostsTtrTtrb: Promise<number> | number | undefined = undefined
+
+    const amtTtrb: Promise<number> = PromptCountFC.call(ttrb)
+    const amtAll: Promise<number> = PromptCountFC.call("")
+    const amtTtr: Promise<number> = PromptCountFC.call(ttr)
+    let amtTtrTtrb: number | Promise<number> | undefined
     if (ttrbCensus) {
-        amtPostsTtrTtrb = ttrbCensus.count(ttr)
+        amtTtrTtrb = ttrbCensus.count(ttr)//assumes a complete census of ttrb
     } else {
-        amtPostsTtrTtrb = PromptCountFC.call(`${ttr} ${ttrb}`)
+        amtTtrTtrb = PromptCountFC.call(`${ttr} ${ttrb}`)
     }
 
-    const amtPostsTtr = PromptCountFC.call(ttr)
-    const pTtrbGivenTtr = (await amtPostsTtrTtrb + 1) / (await amtPostsTtr + 2)
-    // if (Math.random() > 0.99) { console.log(ttr, pTtrbGivenTtr) }
-    return pTtrbGivenTtr
+    let bufferType: string | undefined
+    if (htmlEles.bufferSelect.value === "plusOne") {
+        bufferType = "plusOne"
+    } else if (htmlEles.bufferSelect.value === "relative") {
+        bufferType = "relative"
+    } else {
+        throw new Error("buffer type is neither plusOne nor relative")
+    }
+
+
+    const bufferedProbTtrbGivenTtr = (await amtTtrTtrb + ((bufferType === "plusOne") ? 1 : await amtTtrb)) / (await amtTtr + ((bufferType === "plusOne") ? 2 : await amtAll))
+    const comTtrb = await amtTtrb / await amtAll
+    const relProb = bufferedProbTtrbGivenTtr / comTtrb
+    const logRelProb = Math.log10(relProb)
+    // console.log(`bufferedProbTtrbGivenTtr: ${bufferedProbTtrbGivenTtr}`)
+    // console.log(`comTtrb: ${comTtrb}`)
+    // console.log(`relProb: ${relProb}`)
+    // console.log(`logRelProb: ${logRelProb}`)
+
+    return logRelProb
 }
 
 async function ratePostL1(postToRate: Post, ttrb: string) {
@@ -162,15 +183,13 @@ async function ratePostL1(postToRate: Post, ttrb: string) {
         tagRatingPromises.push(rateTagL1(tag, ttrb))
     }
     const tagRatings: Array<number | undefined> = await Promise.all(tagRatingPromises)
-    const comTtrb = await getCommonness(ttrb)
     let sumOfLogs = 0
     for (const tagRating of tagRatings) {
         if (tagRating === undefined) {
             //meaning ttr === ttrb
             sumOfLogs += 0
         } else {
-            const relativeProb = tagRating / comTtrb
-            sumOfLogs += Math.log10(relativeProb)
+            sumOfLogs += tagRating
         }
     }
     const avgLogRating = sumOfLogs / tagRatings.length
@@ -178,7 +197,12 @@ async function ratePostL1(postToRate: Post, ttrb: string) {
 }
 
 async function rateTagL2(ttr: string, ttrb: string, amtSample: number) {
-    const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
+    if (!poolSortedSample) { throw new Error("rateTagL2 was called before initialization") }
+
+    //const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
+    const postsTtr = poolSortedSample.fetchPosts(ttr)
+    const sample = (postsTtr.length > 100) ? postsTtr.slice(0, 100) : postsTtr
+
     const postRatingPromises: Promise<number>[] = []
     for (const post of sample) {
         postRatingPromises.push(ratePostL1(post, ttrb))
@@ -187,6 +211,7 @@ async function rateTagL2(ttr: string, ttrb: string, amtSample: number) {
     let sum = 0
     for (const rating of postRatings) {
         sum += rating
+        // console.log(rating)
     }
     const avgRating = sum / postRatings.length
     return avgRating
