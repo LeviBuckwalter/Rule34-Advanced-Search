@@ -70,7 +70,7 @@ const poolPostRatings = new Map(); //maps post id to rating
 const poolPostIdArray = [];
 const l2RatingBank = new Map();
 let ttrbCensus;
-const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {});
+const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay);
 let pendingRatings = 0;
 let stepping = false;
 function sortPool() {
@@ -206,8 +206,17 @@ function rateTagL2(ttr, ttrb, amtSample) {
             throw new Error("rateTagL2 was called before initialization");
         }
         //const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
-        const postsTtr = poolSortedSample.fetchPosts(ttr);
-        const sample = (postsTtr.length > 100) ? postsTtr.slice(0, 100) : postsTtr;
+        let sample;
+        const ttrFromPool = poolSortedSample.fetchPosts(ttr);
+        if (ttrFromPool.length > 100) {
+            sample = ttrFromPool.slice(0, 100);
+        }
+        else if (ttrFromPool.length < 50) {
+            sample = yield getPosts(ttr, 100, { lookInCache: false, storeInCache: false });
+        }
+        else /*ttrFromPool.length between 50 and 100*/ {
+            sample = ttrFromPool;
+        }
         const postRatingPromises = [];
         for (const post of sample) {
             postRatingPromises.push(ratePostL1(post, ttrb));

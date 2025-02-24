@@ -1,41 +1,60 @@
 import { Post } from "../../R34-Tools/src/classes/Post.js";
 import { PostDisplay } from "./PostDisplay.js";
 
-type postDisplayOptions = {
-    postsPerPage?: number
-}
 
 export class PostDisplayArray {
     public posts: Post[]
-    private divEle: HTMLDivElement
-    private postsPerPage: number
-    public currentPage: number
+    private displayDiv: HTMLDivElement
+    private postsPerPageInput: HTMLInputElement
+    private defaultOpenCheckbox: HTMLInputElement
+    public currentPost: number
 
-    constructor(posts: Post[], htmlParent: HTMLElement, options: postDisplayOptions) {
+    constructor(posts: Post[], htmlParent: HTMLElement, postsPerPage?: number) {
         this.posts = posts
-        this.divEle = document.createElement("div")
-        this.postsPerPage = (options.postsPerPage) ? options.postsPerPage! : 50
-        this.currentPage = 1
+        this.displayDiv = document.createElement("div")
+        this.currentPost = 1 //not index. post 1 corresponds to the post at index 0
 
-        htmlParent.appendChild(this.divEle)
+
+        const postsPerPageExplenation = document.createElement("span")
+        postsPerPageExplenation.innerText = "Posts per page:"
+        htmlParent.appendChild(postsPerPageExplenation)
+        this.postsPerPageInput = document.createElement("input")
+        this.postsPerPageInput.setAttribute("type", "text")
+        this.postsPerPageInput.setAttribute("value", "50")
+        htmlParent.appendChild(this.postsPerPageInput)
+
+
+        const defaultOpenExplenation = document.createElement("span")
+        defaultOpenExplenation.innerText = "Default open:"
+        htmlParent.appendChild(defaultOpenExplenation)
+        this.defaultOpenCheckbox = document.createElement("input")
+        this.defaultOpenCheckbox.setAttribute("type", "checkbox")
+        htmlParent.appendChild(this.defaultOpenCheckbox)
+
+        htmlParent.appendChild(this.displayDiv)
     }
 
-    private get maxPages() {
-        return Math.ceil(this.posts.length / this.postsPerPage)
+    public get postsPerPage(): number {
+        return (this.postsPerPageInput.value === "") ? 50 : Number(this.postsPerPageInput.value)
+    }
+
+    public get defaultOpen(): boolean {
+        return this.defaultOpenCheckbox.checked
     }
 
     public display() {
-        this.divEle.replaceChildren()//clears children
+        this.displayDiv.replaceChildren()//clears children
         const passableThis = this
         const topOfPDADiv = document.createElement("div") //a div element which will sit at the top of the post display array
-        this.divEle.appendChild(topOfPDADiv)
+        this.displayDiv.appendChild(topOfPDADiv)
+
 
         //previous page button top
         const pageBackwardButtonTop = document.createElement("button")
         pageBackwardButtonTop.innerText = "Previous Page"
         pageBackwardButtonTop.addEventListener("click", function () {
-            if (passableThis.currentPage > 1) {
-                passableThis.currentPage--
+            if (passableThis.currentPost - passableThis.postsPerPage >= 1) {
+                passableThis.currentPost -= passableThis.postsPerPage
                 passableThis.display()
             }
         })
@@ -45,8 +64,8 @@ export class PostDisplayArray {
         const pageForwardButtonTop = document.createElement("button")
         pageForwardButtonTop.innerText = "Next Page"
         pageForwardButtonTop.addEventListener("click", function () {
-            if (passableThis.currentPage < passableThis.maxPages) {
-                passableThis.currentPage++
+            if (passableThis.currentPost + passableThis.postsPerPage < passableThis.posts.length - 1) {
+                passableThis.currentPost += passableThis.postsPerPage
                 passableThis.display()
             }
         })
@@ -54,10 +73,10 @@ export class PostDisplayArray {
 
         //page numbers span top
         const pageNumSpanTop = document.createElement("span")
-        const firstPostNumber = (this.currentPage - 1) * this.postsPerPage + 1
+        const firstPostNumber = this.currentPost
         const lastPostNumber = Math.min(
             this.posts.length,
-            this.currentPage * this.postsPerPage
+            this.currentPost + this.postsPerPage
         )
         pageNumSpanTop.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`
         topOfPDADiv.appendChild(pageNumSpanTop)
@@ -66,25 +85,28 @@ export class PostDisplayArray {
 
 
         //post displays
-        const startIndex = (this.currentPage - 1) * this.postsPerPage//inclusive
-        const endIndex = this.currentPage * this.postsPerPage//exclusive
+        const startIndex = this.currentPost - 1
+        const endIndex = this.currentPost - 1 + this.postsPerPage
         const postsToDisplay = this.posts.slice(startIndex, endIndex)
         for (const post of postsToDisplay) {
-            const pd = new PostDisplay(post, this.divEle)
+            const pd = new PostDisplay(post, this.displayDiv)
+            if (this.defaultOpen) {
+                pd.displayBig()
+            }
         }
 
 
 
 
         const bottomOfPDADiv = document.createElement("div")
-        this.divEle.appendChild(bottomOfPDADiv)
+        this.displayDiv.appendChild(bottomOfPDADiv)
 
         //previous page button bottom
         const pageBackwardButtonBottom = document.createElement("button")
         pageBackwardButtonBottom.innerText = "Previous Page"
         pageBackwardButtonBottom.addEventListener("click", function () {
-            if (passableThis.currentPage > 1) {
-                passableThis.currentPage--
+            if (passableThis.currentPost - passableThis.postsPerPage >= 1) {
+                passableThis.currentPost -= passableThis.postsPerPage
                 passableThis.display()
             }
         })
@@ -94,8 +116,8 @@ export class PostDisplayArray {
         const pageForwardButtonBottom = document.createElement("button")
         pageForwardButtonBottom.innerText = "Next Page"
         pageForwardButtonBottom.addEventListener("click", function () {
-            if (passableThis.currentPage < passableThis.maxPages) {
-                passableThis.currentPage++
+            if (passableThis.currentPost + passableThis.postsPerPage < passableThis.posts.length - 1) {
+                passableThis.currentPost += passableThis.postsPerPage
                 passableThis.display()
             }
         })

@@ -133,7 +133,7 @@ searchButtonEle.addEventListener("click", async function () {
 //     pdArray.display()
 // })
 
-const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {})
+const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement))
 
 
 

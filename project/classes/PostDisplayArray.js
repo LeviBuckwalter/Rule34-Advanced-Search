@@ -1,26 +1,41 @@
 import { PostDisplay } from "./PostDisplay.js";
 export class PostDisplayArray {
-    constructor(posts, htmlParent, options) {
+    constructor(posts, htmlParent, postsPerPage) {
         this.posts = posts;
-        this.divEle = document.createElement("div");
-        this.postsPerPage = (options.postsPerPage) ? options.postsPerPage : 50;
-        this.currentPage = 1;
-        htmlParent.appendChild(this.divEle);
+        this.displayDiv = document.createElement("div");
+        this.currentPost = 1; //not index. post 1 corresponds to the post at index 0
+        const postsPerPageExplenation = document.createElement("span");
+        postsPerPageExplenation.innerText = "Posts per page:";
+        htmlParent.appendChild(postsPerPageExplenation);
+        this.postsPerPageInput = document.createElement("input");
+        this.postsPerPageInput.setAttribute("type", "text");
+        this.postsPerPageInput.setAttribute("value", "50");
+        htmlParent.appendChild(this.postsPerPageInput);
+        const defaultOpenExplenation = document.createElement("span");
+        defaultOpenExplenation.innerText = "Default open:";
+        htmlParent.appendChild(defaultOpenExplenation);
+        this.defaultOpenCheckbox = document.createElement("input");
+        this.defaultOpenCheckbox.setAttribute("type", "checkbox");
+        htmlParent.appendChild(this.defaultOpenCheckbox);
+        htmlParent.appendChild(this.displayDiv);
     }
-    get maxPages() {
-        return Math.ceil(this.posts.length / this.postsPerPage);
+    get postsPerPage() {
+        return (this.postsPerPageInput.value === "") ? 50 : Number(this.postsPerPageInput.value);
+    }
+    get defaultOpen() {
+        return this.defaultOpenCheckbox.checked;
     }
     display() {
-        this.divEle.replaceChildren(); //clears children
+        this.displayDiv.replaceChildren(); //clears children
         const passableThis = this;
         const topOfPDADiv = document.createElement("div"); //a div element which will sit at the top of the post display array
-        this.divEle.appendChild(topOfPDADiv);
+        this.displayDiv.appendChild(topOfPDADiv);
         //previous page button top
         const pageBackwardButtonTop = document.createElement("button");
         pageBackwardButtonTop.innerText = "Previous Page";
         pageBackwardButtonTop.addEventListener("click", function () {
-            if (passableThis.currentPage > 1) {
-                passableThis.currentPage--;
+            if (passableThis.currentPost - passableThis.postsPerPage >= 1) {
+                passableThis.currentPost -= passableThis.postsPerPage;
                 passableThis.display();
             }
         });
@@ -29,33 +44,36 @@ export class PostDisplayArray {
         const pageForwardButtonTop = document.createElement("button");
         pageForwardButtonTop.innerText = "Next Page";
         pageForwardButtonTop.addEventListener("click", function () {
-            if (passableThis.currentPage < passableThis.maxPages) {
-                passableThis.currentPage++;
+            if (passableThis.currentPost + passableThis.postsPerPage < passableThis.posts.length - 1) {
+                passableThis.currentPost += passableThis.postsPerPage;
                 passableThis.display();
             }
         });
         topOfPDADiv.appendChild(pageForwardButtonTop);
         //page numbers span top
         const pageNumSpanTop = document.createElement("span");
-        const firstPostNumber = (this.currentPage - 1) * this.postsPerPage + 1;
-        const lastPostNumber = Math.min(this.posts.length, this.currentPage * this.postsPerPage);
+        const firstPostNumber = this.currentPost;
+        const lastPostNumber = Math.min(this.posts.length, this.currentPost + this.postsPerPage);
         pageNumSpanTop.innerText = `Displaying posts ${firstPostNumber} through ${lastPostNumber} of ${this.posts.length}`;
         topOfPDADiv.appendChild(pageNumSpanTop);
         //post displays
-        const startIndex = (this.currentPage - 1) * this.postsPerPage; //inclusive
-        const endIndex = this.currentPage * this.postsPerPage; //exclusive
+        const startIndex = this.currentPost - 1;
+        const endIndex = this.currentPost - 1 + this.postsPerPage;
         const postsToDisplay = this.posts.slice(startIndex, endIndex);
         for (const post of postsToDisplay) {
-            const pd = new PostDisplay(post, this.divEle);
+            const pd = new PostDisplay(post, this.displayDiv);
+            if (this.defaultOpen) {
+                pd.displayBig();
+            }
         }
         const bottomOfPDADiv = document.createElement("div");
-        this.divEle.appendChild(bottomOfPDADiv);
+        this.displayDiv.appendChild(bottomOfPDADiv);
         //previous page button bottom
         const pageBackwardButtonBottom = document.createElement("button");
         pageBackwardButtonBottom.innerText = "Previous Page";
         pageBackwardButtonBottom.addEventListener("click", function () {
-            if (passableThis.currentPage > 1) {
-                passableThis.currentPage--;
+            if (passableThis.currentPost - passableThis.postsPerPage >= 1) {
+                passableThis.currentPost -= passableThis.postsPerPage;
                 passableThis.display();
             }
         });
@@ -64,8 +82,8 @@ export class PostDisplayArray {
         const pageForwardButtonBottom = document.createElement("button");
         pageForwardButtonBottom.innerText = "Next Page";
         pageForwardButtonBottom.addEventListener("click", function () {
-            if (passableThis.currentPage < passableThis.maxPages) {
-                passableThis.currentPage++;
+            if (passableThis.currentPost + passableThis.postsPerPage < passableThis.posts.length - 1) {
+                passableThis.currentPost += passableThis.postsPerPage;
                 passableThis.display();
             }
         });

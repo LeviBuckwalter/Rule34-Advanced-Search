@@ -11,7 +11,7 @@ import { smartGetElement } from "../../functions/html_functions.js";
 import { getPosts } from "../../../R34-Tools/src/functions/general_functions/end_user.js";
 import { tsToId } from "../../../R34-Tools/src/functions/general_functions/id_timestamp_conversion.js";
 import { PostDisplayArray } from "../../classes/PostDisplayArray.js";
-const postDisplayArrayEle = new PostDisplayArray([], smartGetElement("postDisplayDiv", HTMLDivElement), {});
+const postDisplayArrayEle = new PostDisplayArray([], smartGetElement("postDisplayDiv", HTMLDivElement));
 function search() {
     return __awaiter(this, void 0, void 0, function* () {
         const constraints = smartGetElement("constraints", HTMLInputElement).value + " ";

@@ -69,7 +69,7 @@ const poolPostRatings: Map<number, number> = new Map() //maps post id to rating
 const poolPostIdArray: number[] = []
 const l2RatingBank: Map<string, number> = new Map()
 let ttrbCensus: Census | undefined
-const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay, {})
+const postDisplayArray = new PostDisplayArray([], htmlEles.postDisplay)
 let pendingRatings = 0
 let stepping = false
 
@@ -200,8 +200,16 @@ async function rateTagL2(ttr: string, ttrb: string, amtSample: number) {
     if (!poolSortedSample) { throw new Error("rateTagL2 was called before initialization") }
 
     //const sample = await getPosts(ttr, amtSample, { lookInCache: false, storeInCache: false })
-    const postsTtr = poolSortedSample.fetchPosts(ttr)
-    const sample = (postsTtr.length > 100) ? postsTtr.slice(0, 100) : postsTtr
+    let sample: Post[] | undefined
+    const ttrFromPool = poolSortedSample.fetchPosts(ttr)
+    if (ttrFromPool.length > 100) {
+        sample = ttrFromPool.slice(0, 100)
+    } else if (ttrFromPool.length < 50) {
+        sample = await getPosts(ttr, 100, { lookInCache: false, storeInCache: false })
+    } else /*ttrFromPool.length between 50 and 100*/ {
+        sample = ttrFromPool
+    }
+
 
     const postRatingPromises: Promise<number>[] = []
     for (const post of sample) {

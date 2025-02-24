@@ -127,7 +127,7 @@ searchButtonEle.addEventListener("click", function () {
 //     pdArray.posts = postsToRate
 //     pdArray.display()
 // })
-const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement), {});
+const pdArray = new PostDisplayArray([], smartGetElement("postDisplay", HTMLSpanElement));
 function rateTag(ttr, ttrb, comTtrb) {
     return __awaiter(this, void 0, void 0, function* () {
         //returns the implied probability of ttrb given ttr. NOT RELATIVE TO COMTTRB
