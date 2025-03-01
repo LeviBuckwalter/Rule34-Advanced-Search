@@ -29,6 +29,7 @@ export class PostDisplay {
         const fullImageButtonEle = document.createElement("button");
         fullImageButtonEle.innerText = "Full Image";
         fullImageAnchorEle.appendChild(fullImageButtonEle);
+        this.imgEle.classList.add("display-big");
     }
     displaySmall() {
         this.spanEle.replaceChildren(); //remove all children
@@ -38,5 +39,6 @@ export class PostDisplay {
         this.imgEle.addEventListener("click", function () {
             passableThis.displayBig();
         });
+        this.imgEle.classList.remove("display-big");
     }
 }

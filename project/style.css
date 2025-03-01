@@ -17,6 +17,11 @@ img {
     border-radius: 3px;
 }
 
+img.display-big {
+    width: 100%;
+    margin: 0;
+}
+
 body {
     background: rgb(16, 130, 0);
     background: linear-gradient(48deg, rgba(16, 130, 0, 1) 0%, rgba(255, 241, 0, 1) 100%);

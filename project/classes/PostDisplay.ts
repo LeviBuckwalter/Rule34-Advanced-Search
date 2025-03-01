@@ -42,6 +42,7 @@ export class PostDisplay {
         fullImageButtonEle.innerText = "Full Image"
         fullImageAnchorEle.appendChild(fullImageButtonEle)
 
+        this.imgEle.classList.add("display-big")
     }
 
     displaySmall() {
@@ -53,6 +54,8 @@ export class PostDisplay {
         this.imgEle.addEventListener("click", function () {
             passableThis.displayBig()
         })
+
+        this.imgEle.classList.remove("display-big")
     }
 
 
