@@ -8,9 +8,36 @@ export class PostDisplay {
     constructor(post: Post, htmlParent: HTMLElement) {
         this.post = post
         this.spanEle = document.createElement("span")
+        this.spanEle.classList.add("post-display")
         htmlParent.appendChild(this.spanEle)
+
+        const innerSpan = document.createElement("span")
+        this.spanEle.appendChild(innerSpan);
+
         this.imgEle = document.createElement("img")
-        this.spanEle.appendChild(this.imgEle)
+        innerSpan.appendChild(this.imgEle)
+
+        if (this.post.tags.has("video")) {
+            this.spanEle.classList.add("video")
+        }
+
+        //button that takes you to r34 website
+        const r34AnchorEle = document.createElement("a")
+        r34AnchorEle.href = this.post.siteUrl
+        r34AnchorEle.target = "_blank"
+        innerSpan.appendChild(r34AnchorEle)
+        const r34ButtonEle = document.createElement("button")
+        r34ButtonEle.innerText = "Rule34.xxx"
+        r34AnchorEle.appendChild(r34ButtonEle)
+
+        //button for full image
+        const fullImageAnchorEle = document.createElement("a")
+        fullImageAnchorEle.href = this.post.fullImageUrl
+        fullImageAnchorEle.target = "_blank"
+        innerSpan.appendChild(fullImageAnchorEle)
+        const fullImageButtonEle = document.createElement("button")
+        fullImageButtonEle.innerText = "Full Image"
+        fullImageAnchorEle.appendChild(fullImageButtonEle)
 
         this.displaySmall()
     }
@@ -22,32 +49,17 @@ export class PostDisplay {
         this.imgEle.addEventListener("click", function () {
             passableThis.displaySmall()
         })
+        // this.imgEle.addEventListener("click", () => {
+        //     this.displaySmall()
+        // })
 
-
-        //button that takes you to r34 website
-        const r34AnchorEle = document.createElement("a")
-        r34AnchorEle.href = this.post.siteUrl
-        r34AnchorEle.target = "_blank"
-        this.spanEle.appendChild(r34AnchorEle)
-        const r34ButtonEle = document.createElement("button")
-        r34ButtonEle.innerText = "Rule34.xxx"
-        r34AnchorEle.appendChild(r34ButtonEle)
-
-        //button for full image
-        const fullImageAnchorEle = document.createElement("a")
-        fullImageAnchorEle.href = this.post.fullImageUrl
-        fullImageAnchorEle.target = "_blank"
-        this.spanEle.appendChild(fullImageAnchorEle)
-        const fullImageButtonEle = document.createElement("button")
-        fullImageButtonEle.innerText = "Full Image"
-        fullImageAnchorEle.appendChild(fullImageButtonEle)
-
-        this.imgEle.classList.add("display-big")
+        this.spanEle.classList.add("display-big")
+        this.spanEle.classList.remove("display-small")
     }
 
     displaySmall() {
-        this.spanEle.replaceChildren()//remove all children
-        this.spanEle.appendChild(this.imgEle)
+        // this.spanEle.replaceChildren()//remove all children
+        // this.spanEle.appendChild(this.imgEle)
 
         this.imgEle.src = this.post.thumbnailUrl
         const passableThis = this
@@ -55,7 +67,8 @@ export class PostDisplay {
             passableThis.displayBig()
         })
 
-        this.imgEle.classList.remove("display-big")
+        this.spanEle.classList.add("display-small")
+        this.spanEle.classList.remove("display-big")
     }
 
 

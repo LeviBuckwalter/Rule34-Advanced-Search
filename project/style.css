@@ -17,9 +17,36 @@ img {
     border-radius: 3px;
 }
 
-img.display-big {
+span.display-big img {
     width: 100%;
     margin: 0;
+}
+
+span.post-display.display-small {
+    a, button {
+        display: none;
+    }
+}
+
+span.post-display.video > span {
+    position: relative;
+}
+
+span.post-display.video > span::after {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    margin: 1rem;
+    z-index: 100;
+
+    content: "🎦";
+
+    /* content: "video"; */
+    /* background-color: black; */
+    /* border-radius: 5px; */
+    /* padding: 3px; */
+    /* font-weight: x-small; */
+    /* font-variant: small-caps; */
 }
 
 body {
